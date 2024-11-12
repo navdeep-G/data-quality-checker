@@ -34,6 +34,64 @@ class DatasetQualityChecker:
             "outliers": self.check_outliers(),
         }
         return report
+    
+    def validate_schema(data, schema_file='schema_config.json'):
+        """
+        Generic schema validation function for any dataset and schema.
+
+        Args:
+            data (pd.DataFrame): DataFrame to validate.
+            schema_file (str): Path to the schema configuration file.
+
+        Returns:
+            bool: True if validation passes, otherwise False.
+        """
+        # Load schema
+        with open(schema_file, 'r') as file:
+            schema = json.load(file)
+
+        validation_passed = True
+
+        # Iterate over schema columns to validate
+        for column, properties in schema.get("columns", {}).items():
+            # Check if required column exists
+            if properties.get("required") and column not in data.columns:
+                print(f"Missing required column: '{column}'")
+                validation_passed = False
+                continue
+
+            # If column is optional and missing, skip further checks
+            if column not in data.columns:
+                continue
+
+            # Check data type
+            expected_type = properties.get("type")
+            if expected_type:
+                if expected_type == "int" and not pd.api.types.is_integer_dtype(data[column]):
+                    print(f"Column '{column}' should be integer.")
+                    validation_passed = False
+                elif expected_type == "float" and not pd.api.types.is_float_dtype(data[column]):
+                    print(f"Column '{column}' should be float.")
+                    validation_passed = False
+                elif expected_type == "string" and not pd.api.types.is_string_dtype(data[column]):
+                    print(f"Column '{column}' should be string.")
+                    validation_passed = False
+                elif expected_type == "datetime":
+                    try:
+                        pd.to_datetime(data[column], format=properties.get("format"))
+                    except ValueError:
+                        print(f"Column '{column}' has invalid datetime format.")
+                        validation_passed = False
+
+            # Check min/max constraints
+            if "min" in properties and (data[column] < properties["min"]).any():
+                print(f"Column '{column}' contains values below the minimum of {properties['min']}.")
+                validation_passed = False
+            if "max" in properties and (data[column] > properties["max"]).any():
+                print(f"Column '{column}' contains values above the maximum of {properties['max']}.")
+                validation_passed = False
+
+        return validation_passed
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
