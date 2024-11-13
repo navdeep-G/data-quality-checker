@@ -9,9 +9,13 @@ class DatasetQualityChecker:
         missing = self.data.isnull().mean() * 100
         return missing[missing > 0]
 
-    def check_duplicates(self):
-        """Check for duplicate rows in the dataset."""
-        return self.data.duplicated().sum()
+    def check_duplicates(data, subset=None):
+        duplicates = data.duplicated(subset=subset)
+        if duplicates.any():
+            print(f"Found {duplicates.sum()} duplicates.")
+            return data[duplicates]
+        else:
+            print("No duplicates found.")
 
     def check_outliers(self, threshold=3):
         """Detect outliers using the Z-score method."""
@@ -92,6 +96,7 @@ class DatasetQualityChecker:
                 validation_passed = False
 
         return validation_passed
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
