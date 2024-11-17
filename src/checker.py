@@ -97,6 +97,15 @@ class DatasetQualityChecker:
 
         return validation_passed
 
+    def check_data_type_consistency(self):
+        """Check for inconsistent data types within each column."""
+        inconsistent_columns = {}
+        for column in self.data.columns:
+            unique_types = self.data[column].map(type).nunique()
+            if unique_types > 1:
+                inconsistent_columns[column] = unique_types
+        return inconsistent_columns
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
