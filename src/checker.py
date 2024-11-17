@@ -105,6 +105,24 @@ class DatasetQualityChecker:
             if unique_types > 1:
                 inconsistent_columns[column] = unique_types
         return inconsistent_columns
+    
+    def check_correlation(self, threshold=0.9):
+        """
+        Check for highly correlated numeric features.
+
+        Args:
+            threshold (float): Correlation value above which features are flagged.
+
+        Returns:
+            list of tuples: Pairs of correlated features.
+        """
+        numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
+        correlation_matrix = numeric_data.corr()
+        correlated_features = [
+            (col1, col2) for col1 in correlation_matrix.columns for col2 in correlation_matrix.columns
+            if col1 != col2 and abs(correlation_matrix[col1][col2]) > threshold
+        ]
+        return correlated_features
 
 
 if __name__ == "__main__":
