@@ -105,7 +105,7 @@ class DatasetQualityChecker:
             if unique_types > 1:
                 inconsistent_columns[column] = unique_types
         return inconsistent_columns
-    
+
     def check_correlation(self, threshold=0.9):
         """
         Check for highly correlated numeric features.
@@ -123,6 +123,11 @@ class DatasetQualityChecker:
             if col1 != col2 and abs(correlation_matrix[col1][col2]) > threshold
         ]
         return correlated_features
+
+    def check_unique_values(self):
+        """Identify columns with only one unique value."""
+        single_value_columns = [col for col in self.data.columns if self.data[col].nunique() == 1]
+        return single_value_columns
 
 
 if __name__ == "__main__":
