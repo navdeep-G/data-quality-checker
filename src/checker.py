@@ -147,6 +147,22 @@ class DatasetQualityChecker:
 
         return self.data[self.data[column].str.len() > max_length]
 
+    def check_unexpected_values(self, column, expected_values):
+        """
+        Identify unexpected values in a categorical column.
+
+        Args:
+            column (str): Name of the categorical column to check.
+            expected_values (list): List of expected values.
+
+        Returns:
+            pd.Series: Rows with unexpected values.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        unexpected = ~self.data[column].isin(expected_values)
+        return self.data[unexpected]
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
