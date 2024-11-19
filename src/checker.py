@@ -129,6 +129,24 @@ class DatasetQualityChecker:
         single_value_columns = [col for col in self.data.columns if self.data[col].nunique() == 1]
         return single_value_columns
 
+    def check_text_length(self, column, max_length=255):
+        """
+        Check text data for excessive length.
+
+        Args:
+            column (str): Name of the text column to check.
+            max_length (int): Maximum allowed length for text.
+
+        Returns:
+            pd.Series: Rows with text length exceeding the maximum.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise TypeError(f"Column '{column}' is not of string type.")
+
+        return self.data[self.data[column].str.len() > max_length]
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
