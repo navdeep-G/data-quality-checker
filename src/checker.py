@@ -163,6 +163,26 @@ class DatasetQualityChecker:
         unexpected = ~self.data[column].isin(expected_values)
         return self.data[unexpected]
 
+    def check_time_series_gaps(self, timestamp_column):
+        """
+        Check for missing or unordered timestamps in time-series data.
+
+        Args:
+            timestamp_column (str): Name of the timestamp column.
+
+        Returns:
+            dict: Information on missing or unordered timestamps.
+        """
+        if timestamp_column not in self.data.columns:
+            raise ValueError(f"Timestamp column '{timestamp_column}' not found.")
+        self.data[timestamp_column] = pd.to_datetime(self.data[timestamp_column])
+        gaps = self.data[timestamp_column].diff().dt.total_seconds().dropna()
+        unordered = (gaps < 0).sum()
+        return {
+            "missing_gaps": (gaps == 0).sum(),
+            "unordered_timestamps": unordered
+        }
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
