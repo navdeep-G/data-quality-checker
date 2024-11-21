@@ -1,4 +1,5 @@
 import pandas as pd
+from scipy.stats import ks_2samp
 
 class DatasetQualityChecker:
     def __init__(self, data):
@@ -201,6 +202,28 @@ class DatasetQualityChecker:
         pattern = re.compile(regex)
         invalid_rows = self.data[~self.data[column].astype(str).apply(lambda x: bool(pattern.match(x)))]
         return invalid_rows
+
+    def check_data_drift(self, baseline_data, column):
+        """
+        Check if the distribution of a column has shifted compared to baseline data.
+
+        Args:
+            baseline_data (pd.DataFrame): Baseline dataset for comparison.
+            column (str): Name of the column to check for drift.
+
+        Returns:
+            float: p-value indicating if the distributions are statistically different.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the current dataset.")
+        if column not in baseline_data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the baseline dataset.")
+
+        current_values = self.data[column].dropna()
+        baseline_values = baseline_data[column].dropna()
+
+        _, p_value = ks_2samp(current_values, baseline_values)
+        return p_value
 
 
 if __name__ == "__main__":
