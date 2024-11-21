@@ -183,6 +183,25 @@ class DatasetQualityChecker:
             "unordered_timestamps": unordered
         }
 
+    import re
+
+    def check_pattern_consistency(self, column, regex):
+        """
+        Check if values in a column match a specific pattern.
+
+        Args:
+            column (str): Name of the column to check.
+            regex (str): Regular expression for the expected pattern.
+
+        Returns:
+            pd.DataFrame: Rows where the pattern does not match.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        pattern = re.compile(regex)
+        invalid_rows = self.data[~self.data[column].astype(str).apply(lambda x: bool(pattern.match(x)))]
+        return invalid_rows
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
