@@ -225,6 +225,23 @@ class DatasetQualityChecker:
         _, p_value = ks_2samp(current_values, baseline_values)
         return p_value
 
+    def check_rare_categories(self, column, threshold=1):
+        """
+        Identify rare categories in a column.
+
+        Args:
+            column (str): Name of the column to analyze.
+            threshold (int): Minimum count below which a category is considered rare.
+
+        Returns:
+            list: Categories that are considered rare.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        value_counts = self.data[column].value_counts()
+        rare_categories = value_counts[value_counts < threshold].index.tolist()
+        return rare_categories
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
