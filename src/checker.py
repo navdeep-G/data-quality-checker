@@ -286,6 +286,28 @@ class DatasetQualityChecker:
         violations = self.data[~self.data.apply(lambda row: rule(row[column1], row[column2]), axis=1)]
         return violations
 
+    from sklearn.ensemble import IsolationForest
+
+    def detect_anomalies(self, column, contamination=0.05):
+        """
+        Detect anomalies in a numeric column using Isolation Forest.
+
+        Args:
+            column (str): Name of the numeric column to check.
+            contamination (float): Proportion of anomalies in the data.
+
+        Returns:
+            pd.Series: Boolean series indicating anomalies.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise TypeError(f"Column '{column}' is not numeric.")
+
+        isolation_forest = IsolationForest(contamination=contamination, random_state=42)
+        self.data['anomaly'] = isolation_forest.fit_predict(self.data[[column]])
+        return self.data['anomaly'] == -1
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
