@@ -268,6 +268,24 @@ class DatasetQualityChecker:
                         similar_pairs.append((text1, text2, similarity))
         return similar_pairs
 
+    def check_cross_column_dependency(self, column1, column2, rule):
+        """
+        Check for violations of a cross-column dependency rule.
+
+        Args:
+            column1 (str): First column involved in the rule.
+            column2 (str): Second column involved in the rule.
+            rule (callable): A function that takes two arguments and returns True if the rule is satisfied.
+
+        Returns:
+            pd.DataFrame: Rows where the rule is violated.
+        """
+        if column1 not in self.data.columns or column2 not in self.data.columns:
+            raise ValueError("One or both columns do not exist in the dataset.")
+
+        violations = self.data[~self.data.apply(lambda row: rule(row[column1], row[column2]), axis=1)]
+        return violations
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
