@@ -1,5 +1,6 @@
 import pandas as pd
 from scipy.stats import ks_2samp
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 class DatasetQualityChecker:
     def __init__(self, data):
@@ -329,6 +330,30 @@ class DatasetQualityChecker:
             for condition, outcomes in expected_probabilities.items()
         }
         return deviations
+
+    def check_multicollinearity(self, threshold=10):
+        """Check for multicollinearity using Variance Inflation Factor (VIF)."""
+        numeric_data = self.data.select_dtypes(include=['float64', 'int64']).dropna()
+        vif_data = pd.DataFrame()
+        vif_data["feature"] = numeric_data.columns
+        vif_data["VIF"] = [variance_inflation_factor(numeric_data.values, i) for i in range(numeric_data.shape[1])]
+        return vif_data[vif_data["VIF"] > threshold]
+
+    def check_column_naming_convention(self, regex_pattern=r"^[a-z_]+$"):
+        """Check if column names adhere to a specific naming convention."""
+        pattern = re.compile(regex_pattern)
+        inconsistent_columns = [col for col in self.data.columns if not pattern.match(col)]
+        return inconsistent_columns
+
+    def check_rare_events(self, column, z_threshold=3):
+        """Identify rare events in a time-series or numeric column based on deviations from the mean."""
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' not found.")
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise TypeError(f"Column '{column}' is not numeric.")
+
+        z_scores = (self.data[column] - self.data[column].mean()) / self.data[column].std()
+        return self.data[z_scores.abs() > z_threshold]
 
 
 if __name__ == "__main__":
