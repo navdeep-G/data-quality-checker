@@ -308,6 +308,28 @@ class DatasetQualityChecker:
         self.data['anomaly'] = isolation_forest.fit_predict(self.data[[column]])
         return self.data['anomaly'] == -1
 
+    def check_conditional_probability(self, column1, column2, expected_probabilities):
+        """
+        Check if conditional probabilities deviate from expected values.
+
+        Args:
+            column1 (str): The column representing conditions.
+            column2 (str): The column representing outcomes.
+            expected_probabilities (dict): Mapping of conditions to expected probabilities of outcomes.
+
+        Returns:
+            dict: Actual conditional probabilities compared to expected probabilities.
+        """
+        actual_probabilities = self.data.groupby(column1)[column2].value_counts(normalize=True).to_dict()
+        deviations = {
+            condition: {
+                outcome: actual_probabilities.get((condition, outcome), 0) - expected_prob
+                for outcome, expected_prob in outcomes.items()
+            }
+            for condition, outcomes in expected_probabilities.items()
+        }
+        return deviations
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
