@@ -242,6 +242,32 @@ class DatasetQualityChecker:
         rare_categories = value_counts[value_counts < threshold].index.tolist()
         return rare_categories
 
+    from difflib import SequenceMatcher
+
+    def check_text_similarity(self, column, similarity_threshold=0.8):
+        """
+        Identify pairs of text entries in a column with high similarity.
+
+        Args:
+            column (str): Name of the column to check.
+            similarity_threshold (float): Threshold for similarity (0 to 1).
+
+        Returns:
+            list of tuples: Pairs of similar text entries.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        text_data = self.data[column].dropna().astype(str).tolist()
+        similar_pairs = []
+
+        for i, text1 in enumerate(text_data):
+            for j, text2 in enumerate(text_data):
+                if i < j:  # Avoid duplicate comparisons
+                    similarity = SequenceMatcher(None, text1, text2).ratio()
+                    if similarity >= similarity_threshold:
+                        similar_pairs.append((text1, text2, similarity))
+        return similar_pairs
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
