@@ -1,6 +1,8 @@
 import pandas as pd
 from scipy.stats import ks_2samp
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from sklearn.feature_extraction.text import CountVectorizer
+from nltk.corpus import stopwords
 
 class DatasetQualityChecker:
     def __init__(self, data):
@@ -354,6 +356,32 @@ class DatasetQualityChecker:
 
         z_scores = (self.data[column] - self.data[column].mean()) / self.data[column].std()
         return self.data[z_scores.abs() > z_threshold]
+
+    from sklearn.feature_extraction.text import CountVectorizer
+    from nltk.corpus import stopwords
+
+    def check_common_words(self, column, top_n=10):
+        """
+        Identify the most common words in a text column.
+
+        Args:
+            column (str): Name of the text column.
+            top_n (int): Number of top common words to return.
+
+        Returns:
+            pd.DataFrame: Top N most common words and their counts.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise TypeError(f"Column '{column}' is not of string type.")
+
+        vectorizer = CountVectorizer(stop_words=stopwords.words("english"))
+        word_counts = vectorizer.fit_transform(self.data[column].dropna())
+        word_freq = pd.DataFrame(
+            word_counts.toarray(), columns=vectorizer.get_feature_names_out()
+        ).sum().sort_values(ascending=False).head(top_n)
+        return word_freq
 
 
 if __name__ == "__main__":
