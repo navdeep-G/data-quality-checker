@@ -465,6 +465,26 @@ class DatasetQualityChecker:
         }
         return deviations
 
+    def check_feature_engineering_quality(self, features):
+        """
+        Assess if engineered features add value by checking their correlation with the target.
+
+        Args:
+            features (list): List of engineered feature column names.
+
+        Returns:
+            dict: Features with their correlation values against the target.
+        """
+        target_column = "target"  # Replace with the actual target column
+        if target_column not in self.data.columns:
+            raise ValueError(f"Target column '{target_column}' does not exist.")
+        correlations = {}
+        for feature in features:
+            if feature not in self.data.columns:
+                raise ValueError(f"Feature column '{feature}' does not exist.")
+            correlations[feature] = self.data[feature].corr(self.data[target_column])
+        return correlations
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
