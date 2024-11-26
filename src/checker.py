@@ -445,6 +445,26 @@ class DatasetQualityChecker:
         adjusted_stat = getattr(non_outliers[column], method)()
         return original_stat - adjusted_stat
 
+    def check_sampling_bias(self, column, baseline_distribution):
+        """
+        Compare the distribution of a column with a baseline distribution.
+
+        Args:
+            column (str): Column to compare.
+            baseline_distribution (dict): Expected distribution as a dictionary.
+
+        Returns:
+            dict: Deviation of actual distribution from the baseline.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        actual_distribution = self.data[column].value_counts(normalize=True).to_dict()
+        deviations = {
+            category: actual_distribution.get(category, 0) - baseline_distribution.get(category, 0)
+            for category in baseline_distribution
+        }
+        return deviations
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
