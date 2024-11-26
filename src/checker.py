@@ -404,7 +404,26 @@ class DatasetQualityChecker:
             if abs(correlation) > 0.8:
                 correlations[feature] = correlation
         return correlations
-    
+
+    def check_data_coverage(self, reference_data, columns):
+        """
+        Check if the dataset sufficiently covers all unique values in specified columns of a reference dataset.
+
+        Args:
+            reference_data (pd.DataFrame): Reference dataset for comparison.
+            columns (list): Columns to evaluate for coverage.
+
+        Returns:
+            dict: Missing values for each column.
+        """
+        missing_coverage = {}
+        for column in columns:
+            if column not in self.data.columns or column not in reference_data.columns:
+                raise ValueError(f"Column '{column}' does not exist in one of the datasets.")
+            missing_values = set(reference_data[column].unique()) - set(self.data[column].unique())
+            missing_coverage[column] = missing_values
+        return missing_coverage
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
