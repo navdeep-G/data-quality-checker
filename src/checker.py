@@ -383,6 +383,28 @@ class DatasetQualityChecker:
         ).sum().sort_values(ascending=False).head(top_n)
         return word_freq
 
+    def detect_data_leaks(self, target_column, feature_columns):
+        """
+        Detect potential data leaks by checking for high correlation between features and the target.
+
+        Args:
+            target_column (str): Name of the target column.
+            feature_columns (list): List of feature column names to evaluate.
+
+        Returns:
+            dict: Feature columns with correlation above 0.8.
+        """
+        if target_column not in self.data.columns:
+            raise ValueError(f"Target column '{target_column}' does not exist.")
+        correlations = {}
+        for feature in feature_columns:
+            if feature not in self.data.columns:
+                raise ValueError(f"Feature column '{feature}' does not exist.")
+            correlation = self.data[feature].corr(self.data[target_column])
+            if abs(correlation) > 0.8:
+                correlations[feature] = correlation
+        return correlations
+    
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
