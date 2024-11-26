@@ -424,6 +424,27 @@ class DatasetQualityChecker:
             missing_coverage[column] = missing_values
         return missing_coverage
 
+    def check_outlier_impact(self, column, method='mean'):
+        """
+        Assess the impact of outliers on aggregate statistics.
+
+        Args:
+            column (str): Column to analyze.
+            method (str): Aggregation method ('mean' or 'median').
+
+        Returns:
+            float: Difference in the aggregate value with and without outliers.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if method not in ['mean', 'median']:
+            raise ValueError(f"Method '{method}' is not supported.")
+        z_scores = (self.data[column] - self.data[column].mean()) / self.data[column].std()
+        non_outliers = self.data[z_scores.abs() <= 3]
+        original_stat = getattr(self.data[column], method)()
+        adjusted_stat = getattr(non_outliers[column], method)()
+        return original_stat - adjusted_stat
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
