@@ -507,6 +507,21 @@ class DatasetQualityChecker:
             correlations[feature] = self.data[feature].corr(self.data[target_column])
         return correlations
 
+    def category_feature_interaction(self, categorical_column, numeric_column):
+        """
+        Analyze the interaction between a categorical column and a numerical column.
+        Args:
+            categorical_column (str): Name of the categorical column.
+            numeric_column (str): Name of the numeric column.
+        Returns:
+            pd.DataFrame: Statistics of the numeric column grouped by the categorical column.
+        """
+        if categorical_column not in self.data.columns or numeric_column not in self.data.columns:
+            raise ValueError("One or both specified columns do not exist in the dataset.")
+
+        interaction_stats = self.data.groupby(categorical_column)[numeric_column].describe()
+        return interaction_stats
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
