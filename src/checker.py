@@ -522,6 +522,18 @@ class DatasetQualityChecker:
         interaction_stats = self.data.groupby(categorical_column)[numeric_column].describe()
         return interaction_stats
 
+    def low_variance_features(self, threshold=0.01):
+        """
+        Identify features with low variance.
+        Args:
+            threshold (float): Variance threshold below which features are flagged.
+        Returns:
+            list: Features with variance below the threshold.
+        """
+        variances = self.data.var()
+        low_variance = variances[variances < threshold].index.tolist()
+        return low_variance
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
