@@ -534,6 +534,16 @@ class DatasetQualityChecker:
         low_variance = variances[variances < threshold].index.tolist()
         return low_variance
 
+    def check_skewness(self):
+        """
+        Calculate skewness for numeric features.
+        Returns:
+            pd.Series: Skewness values for numeric columns.
+        """
+        numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
+        skewness = numeric_data.skew()
+        return skewness
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
