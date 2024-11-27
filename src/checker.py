@@ -3,6 +3,8 @@ from scipy.stats import ks_2samp
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.feature_extraction.text import CountVectorizer
 from nltk.corpus import stopwords
+import statsmodels.api as sm
+
 
 class DatasetQualityChecker:
     def __init__(self, data):
@@ -608,6 +610,24 @@ class DatasetQualityChecker:
             elif pd.api.types.is_object_dtype(self.data[column]):
                 summary[column] = self.data[column].value_counts().to_dict()
         return summary
+
+    def time_series_decomposition(self, column, frequency):
+        """
+        Decompose a time-series column into trend, seasonality, and residuals.
+        Args:
+            column (str): Name of the time-series column.
+            frequency (int): Seasonal frequency.
+        Returns:
+            sm.tsa.seasonal_decompose: Decomposed components.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        ts_data = self.data[column].dropna()
+        decomposition = sm.tsa.seasonal_decompose(ts_data, period=frequency)
+        decomposition.plot()
+        plt.show()
+        return decomposition
 
 
 if __name__ == "__main__":
