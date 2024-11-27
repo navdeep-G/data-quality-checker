@@ -333,6 +333,28 @@ class DatasetQualityChecker:
         }
         return deviations
 
+    def plot_cdf(self, column):
+        """
+        Plot the CDF of a numeric column.
+        Args:
+            column (str): Name of the numeric column.
+        Returns:
+            None
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        data = self.data[column].dropna()
+        sorted_data = np.sort(data)
+        cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
+
+        plt.plot(sorted_data, cdf)
+        plt.title(f"CDF of {column}")
+        plt.xlabel(column)
+        plt.ylabel("CDF")
+        plt.grid(True)
+        plt.show()
+
     def check_multicollinearity(self, threshold=10):
         """Check for multicollinearity using Variance Inflation Factor (VIF)."""
         numeric_data = self.data.select_dtypes(include=['float64', 'int64']).dropna()
