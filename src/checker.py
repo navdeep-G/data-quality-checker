@@ -567,6 +567,21 @@ class DatasetQualityChecker:
             plt.title(f"{feature} vs {target_column}")
             plt.show()
 
+    def cross_column_value_patterns(self, column1, column2):
+        """
+        Check for specific value patterns between two columns.
+        Args:
+            column1 (str): First column.
+            column2 (str): Second column.
+        Returns:
+            pd.DataFrame: Frequency table of value pairs.
+        """
+        if column1 not in self.data.columns or column2 not in self.data.columns:
+            raise ValueError("One or both specified columns do not exist in the dataset.")
+
+        patterns = self.data.groupby([column1, column2]).size().unstack(fill_value=0)
+        return patterns
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
