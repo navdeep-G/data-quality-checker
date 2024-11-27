@@ -582,6 +582,19 @@ class DatasetQualityChecker:
         patterns = self.data.groupby([column1, column2]).size().unstack(fill_value=0)
         return patterns
 
+    def plot_correlation_heatmap(self):
+        """
+        Plot a heatmap for numeric feature correlations.
+        Returns:
+            None
+        """
+        numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
+        correlation_matrix = numeric_data.corr()
+
+        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+        plt.title("Correlation Heatmap")
+        plt.show()
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
