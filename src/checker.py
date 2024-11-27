@@ -544,6 +544,29 @@ class DatasetQualityChecker:
         skewness = numeric_data.skew()
         return skewness
 
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    def target_feature_relationship(self, target_column, feature_columns):
+        """
+        Plot the relationship between the target column and numeric features.
+        Args:
+            target_column (str): The target variable.
+            feature_columns (list): List of feature columns to analyze.
+        Returns:
+            None
+        """
+        if target_column not in self.data.columns:
+            raise ValueError(f"Target column '{target_column}' does not exist.")
+
+        for feature in feature_columns:
+            if feature not in self.data.columns:
+                print(f"Skipping {feature}, as it does not exist.")
+                continue
+            sns.boxplot(x=self.data[target_column], y=self.data[feature])
+            plt.title(f"{feature} vs {target_column}")
+            plt.show()
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
