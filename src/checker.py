@@ -595,6 +595,20 @@ class DatasetQualityChecker:
         plt.title("Correlation Heatmap")
         plt.show()
 
+    def value_distribution_summary(self):
+        """
+        Summarize the value distribution for each column.
+        Returns:
+            dict: Summary statistics for numeric and value counts for categorical columns.
+        """
+        summary = {}
+        for column in self.data.columns:
+            if pd.api.types.is_numeric_dtype(self.data[column]):
+                summary[column] = self.data[column].describe()
+            elif pd.api.types.is_object_dtype(self.data[column]):
+                summary[column] = self.data[column].value_counts().to_dict()
+        return summary
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
