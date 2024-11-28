@@ -629,6 +629,21 @@ class DatasetQualityChecker:
         plt.show()
         return decomposition
 
+    def analyze_text_length(self, column, min_length=5, max_length=500):
+        """
+        Analyze the length of text data in a column.
+        Args:
+            column (str): Text column to analyze.
+            min_length (int): Minimum acceptable length.
+            max_length (int): Maximum acceptable length.
+        Returns:
+            pd.DataFrame: Rows with text outside the acceptable range.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' not found.")
+        lengths = self.data[column].str.len()
+        return self.data[(lengths < min_length) | (lengths > max_length)]
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
