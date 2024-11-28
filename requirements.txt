@@ -1,3 +1,5 @@
 pandas
 scipy
 statsmodels
+nltk
+scikit-learn
