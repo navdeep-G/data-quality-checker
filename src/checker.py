@@ -4,6 +4,7 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.feature_extraction.text import CountVectorizer
 from nltk.corpus import stopwords
 import statsmodels.api as sm
+from nltk.corpus import stopwords
 
 
 class DatasetQualityChecker:
@@ -643,6 +644,18 @@ class DatasetQualityChecker:
             raise ValueError(f"Column '{column}' not found.")
         lengths = self.data[column].str.len()
         return self.data[(lengths < min_length) | (lengths > max_length)]
+
+    def count_stopwords(self, column, language='english'):
+        """
+        Count stopwords in a text column.
+        Args:
+            column (str): Text column.
+            language (str): Language of stopwords (e.g., 'english').
+        Returns:
+            pd.Series: Number of stopwords in each row.
+        """
+        stop_words = set(stopwords.words(language))
+        return self.data[column].apply(lambda text: sum(1 for word in str(text).split() if word.lower() in stop_words))
 
 
 if __name__ == "__main__":
