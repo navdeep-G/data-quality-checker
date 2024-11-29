@@ -681,6 +681,21 @@ class DatasetQualityChecker:
         """
         return self.data[column].apply(lambda text: len(set(str(text).split())))
 
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    def compute_tfidf(self, column, max_features=100):
+        """
+        Compute TF-IDF for a text column.
+        Args:
+            column (str): Text column.
+            max_features (int): Maximum number of features to extract.
+        Returns:
+            pd.DataFrame: TF-IDF matrix.
+        """
+        vectorizer = TfidfVectorizer(max_features=max_features)
+        tfidf_matrix = vectorizer.fit_transform(self.data[column].dropna())
+        return pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out())
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
