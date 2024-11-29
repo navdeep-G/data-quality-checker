@@ -657,6 +657,20 @@ class DatasetQualityChecker:
         stop_words = set(stopwords.words(language))
         return self.data[column].apply(lambda text: sum(1 for word in str(text).split() if word.lower() in stop_words))
 
+    from collections import Counter
+
+    def word_frequency(self, column, top_n=10):
+        """
+        Identify the most common words in a text column.
+        Args:
+            column (str): Text column.
+            top_n (int): Number of most common words to return.
+        Returns:
+            dict: Top N words and their frequencies.
+        """
+        all_words = self.data[column].dropna().str.split().explode()
+        return dict(Counter(all_words).most_common(top_n))
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
