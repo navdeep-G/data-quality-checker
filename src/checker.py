@@ -671,6 +671,16 @@ class DatasetQualityChecker:
         all_words = self.data[column].dropna().str.split().explode()
         return dict(Counter(all_words).most_common(top_n))
 
+    def count_unique_words(self, column):
+        """
+        Count the number of unique words in each text entry.
+        Args:
+            column (str): Text column.
+        Returns:
+            pd.Series: Number of unique words in each row.
+        """
+        return self.data[column].apply(lambda text: len(set(str(text).split())))
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
