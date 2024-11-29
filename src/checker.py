@@ -5,6 +5,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from nltk.corpus import stopwords
 import statsmodels.api as sm
 from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+from collections import Counter
 
 
 class DatasetQualityChecker:
@@ -657,8 +659,6 @@ class DatasetQualityChecker:
         stop_words = set(stopwords.words(language))
         return self.data[column].apply(lambda text: sum(1 for word in str(text).split() if word.lower() in stop_words))
 
-    from collections import Counter
-
     def word_frequency(self, column, top_n=10):
         """
         Identify the most common words in a text column.
@@ -680,8 +680,6 @@ class DatasetQualityChecker:
             pd.Series: Number of unique words in each row.
         """
         return self.data[column].apply(lambda text: len(set(str(text).split())))
-
-    from sklearn.feature_extraction.text import TfidfVectorizer
 
     def compute_tfidf(self, column, max_features=100):
         """
