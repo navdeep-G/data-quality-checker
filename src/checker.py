@@ -718,6 +718,24 @@ class DatasetQualityChecker:
         """
         return self.data[column].apply(lambda text: detect(str(text)) if pd.notnull(text) else None)
 
+    from sklearn.feature_extraction.text import CountVectorizer
+
+    def n_gram_analysis(self, column, n=2, top_n=10):
+        """
+        Generate and count n-grams in a text column.
+        Args:
+            column (str): Text column.
+            n (int): Size of the n-grams.
+            top_n (int): Number of most frequent n-grams to return.
+        Returns:
+            dict: Top N n-grams and their frequencies.
+        """
+        vectorizer = CountVectorizer(ngram_range=(n, n))
+        n_grams = vectorizer.fit_transform(self.data[column].dropna())
+        n_gram_counts = n_grams.sum(axis=0)
+        n_grams_freq = [(word, n_gram_counts[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
+        return sorted(n_grams_freq, key=lambda x: -x[1])[:top_n]
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
