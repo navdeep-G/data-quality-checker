@@ -744,10 +744,3 @@ class DatasetQualityChecker:
         tfidf_matrix = vectorizer.fit_transform(self.data[column].dropna())
         similarity_matrix = cosine_similarity(tfidf_matrix)
         return pd.DataFrame(similarity_matrix)
-
-
-if __name__ == "__main__":
-    df = pd.read_csv("../data/sample_data.csv")
-    checker = DatasetQualityChecker(df)
-    report = checker.generate_report()
-    print("Dataset Quality Report:\n", report)
