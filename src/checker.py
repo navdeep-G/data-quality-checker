@@ -7,10 +7,9 @@ import statsmodels.api as sm
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
-from sklearn.feature_extraction.text import CountVectorizer
 from langdetect import detect
 from textblob import TextBlob
-
+from sklearn.metrics.pairwise import cosine_similarity
 
 class DatasetQualityChecker:
     def __init__(self, data):
@@ -732,6 +731,19 @@ class DatasetQualityChecker:
         n_gram_counts = n_grams.sum(axis=0)
         n_grams_freq = [(word, n_gram_counts[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
         return sorted(n_grams_freq, key=lambda x: -x[1])[:top_n]
+
+    def text_similarity(self, column):
+        """
+        Compute pairwise cosine similarity for text entries.
+        Args:
+            column (str): Text column.
+        Returns:
+            pd.DataFrame: Pairwise similarity matrix.
+        """
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(self.data[column].dropna())
+        similarity_matrix = cosine_similarity(tfidf_matrix)
+        return pd.DataFrame(similarity_matrix)
 
 
 if __name__ == "__main__":
