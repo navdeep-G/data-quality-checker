@@ -694,6 +694,18 @@ class DatasetQualityChecker:
         tfidf_matrix = vectorizer.fit_transform(self.data[column].dropna())
         return pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out())
 
+    from textblob import TextBlob
+
+    def sentiment_analysis(self, column):
+        """
+        Perform sentiment analysis on a text column.
+        Args:
+            column (str): Text column.
+        Returns:
+            pd.DataFrame: Sentiment polarity and subjectivity scores.
+        """
+        return self.data[column].apply(lambda text: TextBlob(str(text)).sentiment)
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
