@@ -7,6 +7,9 @@ import statsmodels.api as sm
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
+from sklearn.feature_extraction.text import CountVectorizer
+from langdetect import detect
+from textblob import TextBlob
 
 
 class DatasetQualityChecker:
@@ -694,8 +697,6 @@ class DatasetQualityChecker:
         tfidf_matrix = vectorizer.fit_transform(self.data[column].dropna())
         return pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out())
 
-    from textblob import TextBlob
-
     def sentiment_analysis(self, column):
         """
         Perform sentiment analysis on a text column.
@@ -706,8 +707,6 @@ class DatasetQualityChecker:
         """
         return self.data[column].apply(lambda text: TextBlob(str(text)).sentiment)
 
-    from langdetect import detect
-
     def detect_language(self, column):
         """
         Detect the language of text entries.
@@ -717,8 +716,6 @@ class DatasetQualityChecker:
             pd.Series: Detected languages.
         """
         return self.data[column].apply(lambda text: detect(str(text)) if pd.notnull(text) else None)
-
-    from sklearn.feature_extraction.text import CountVectorizer
 
     def n_gram_analysis(self, column, n=2, top_n=10):
         """
