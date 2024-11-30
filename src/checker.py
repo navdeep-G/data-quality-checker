@@ -706,6 +706,18 @@ class DatasetQualityChecker:
         """
         return self.data[column].apply(lambda text: TextBlob(str(text)).sentiment)
 
+    from langdetect import detect
+
+    def detect_language(self, column):
+        """
+        Detect the language of text entries.
+        Args:
+            column (str): Text column.
+        Returns:
+            pd.Series: Detected languages.
+        """
+        return self.data[column].apply(lambda text: detect(str(text)) if pd.notnull(text) else None)
+
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/sample_data.csv")
