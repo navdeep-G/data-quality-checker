@@ -19,13 +19,33 @@ import json
 
 ### 1. DataQualityChecker Class (20 methods)
 class DataQualityChecker:
+    """
+    A comprehensive class for assessing and addressing data quality issues.
+
+    Attributes:
+        data (pd.DataFrame): The dataset to analyze.
+    """
+
     def __init__(self, data):
+        """
+        Initialize the DataQualityChecker with a pandas DataFrame.
+
+        Args:
+            data (pd.DataFrame): The dataset to analyze.
+
+        Raises:
+            ValueError: If the input is not a pandas DataFrame.
+        """
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("Input data must be a pandas DataFrame.")
         self.data = data
 
     def generate_report(self):
         """
-        Generate a summary report of data quality issues including missing values,
-        duplicates, and outliers.
+        Generate a summary report of data quality issues.
+
+        Returns:
+            dict: A dictionary containing missing values, duplicate records, and outlier counts.
         """
         report = {
             "missing_values": self.check_missing_values(),
@@ -37,17 +57,41 @@ class DataQualityChecker:
     def check_cross_column_dependency(self, column1, column2, rule):
         """
         Check for violations of cross-column dependency rules.
+
+        Args:
+            column1 (str): The first column involved in the dependency.
+            column2 (str): The second column involved in the dependency.
+            rule (callable): A function that evaluates the dependency.
+
+        Returns:
+            pd.DataFrame: Rows where the dependency rule is violated.
+
+        Raises:
+            ValueError: If either column is missing or the rule is not callable.
         """
         if column1 not in self.data.columns or column2 not in self.data.columns:
             raise ValueError("One or both specified columns do not exist in the dataset.")
+        if not callable(rule):
+            raise ValueError("The rule must be a callable function.")
         violations = self.data[~self.data.apply(lambda row: rule(row[column1], row[column2]), axis=1)]
         return violations
 
     def check_multicollinearity(self, threshold=10):
         """
         Check for multicollinearity using Variance Inflation Factor (VIF).
+
+        Args:
+            threshold (float): The VIF threshold above which a feature is flagged.
+
+        Returns:
+            pd.DataFrame: A DataFrame with features and their VIF values exceeding the threshold.
+
+        Raises:
+            ValueError: If the dataset has no numeric columns.
         """
         numeric_data = self.data.select_dtypes(include=["float64", "int64"]).dropna()
+        if numeric_data.empty:
+            raise ValueError("No numeric columns available for multicollinearity check.")
         vif_data = pd.DataFrame()
         vif_data["feature"] = numeric_data.columns
         vif_data["VIF"] = [
@@ -58,6 +102,13 @@ class DataQualityChecker:
     def target_feature_relationship(self, target_column, feature_columns):
         """
         Plot the relationship between the target column and numeric features.
+
+        Args:
+            target_column (str): The target column.
+            feature_columns (list): A list of feature columns.
+
+        Raises:
+            ValueError: If the target column or any feature column is missing.
         """
         if target_column not in self.data.columns:
             raise ValueError(f"Target column '{target_column}' does not exist.")
@@ -68,20 +119,27 @@ class DataQualityChecker:
             sns.boxplot(x=self.data[target_column], y=self.data[feature])
             plt.title(f"{feature} vs {target_column}")
             plt.show()
+
     def check_pattern_consistency(self, column, regex):
         """
         Check if values in a column match a specific pattern.
 
         Args:
-            column (str): Name of the column to check.
-            regex (str): Regular expression for the expected pattern.
+            column (str): The name of the column to check.
+            regex (str): The regular expression defining the pattern.
 
         Returns:
             pd.DataFrame: Rows where the pattern does not match.
+
+        Raises:
+            ValueError: If the column is missing or the regex is invalid.
         """
         if column not in self.data.columns:
             raise ValueError(f"Column '{column}' does not exist in the dataset.")
-        pattern = re.compile(regex)
+        try:
+            pattern = re.compile(regex)
+        except re.error:
+            raise ValueError("Invalid regular expression provided.")
         invalid_rows = self.data[~self.data[column].astype(str).apply(lambda x: bool(pattern.match(x)))]
         return invalid_rows
 
@@ -90,14 +148,19 @@ class DataQualityChecker:
         Identify unexpected values in a categorical column.
 
         Args:
-            column (str): Name of the categorical column to check.
-            expected_values (list): List of expected values.
+            column (str): The categorical column to analyze.
+            expected_values (list): List of valid expected values.
 
         Returns:
-            pd.Series: Rows with unexpected values.
+            pd.DataFrame: Rows with unexpected values.
+
+        Raises:
+            ValueError: If the column is missing or the expected values are not a list.
         """
         if column not in self.data.columns:
             raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if not isinstance(expected_values, list):
+            raise ValueError("Expected values must be provided as a list.")
         unexpected = ~self.data[column].isin(expected_values)
         return self.data[unexpected]
 
@@ -106,11 +169,14 @@ class DataQualityChecker:
         Check if the dataset sufficiently covers all unique values in specified columns of a reference dataset.
 
         Args:
-            reference_data (pd.DataFrame): Reference dataset for comparison.
-            columns (list): Columns to evaluate for coverage.
+            reference_data (pd.DataFrame): The reference dataset.
+            columns (list): List of columns to compare.
 
         Returns:
-            dict: Missing values for each column.
+            dict: Columns and their missing unique values.
+
+        Raises:
+            ValueError: If the columns are not present in either dataset.
         """
         missing_coverage = {}
         for column in columns:
@@ -122,14 +188,17 @@ class DataQualityChecker:
 
     def detect_data_leaks(self, target_column, feature_columns):
         """
-        Detect potential data leaks by checking for high correlation between features and the target.
+        Detect potential data leaks by checking for high correlation between features and the target column.
 
         Args:
-            target_column (str): Name of the target column.
-            feature_columns (list): List of feature column names to evaluate.
+            target_column (str): The target column.
+            feature_columns (list): List of feature columns to analyze.
 
         Returns:
-            dict: Feature columns with correlation above 0.8.
+            dict: Features with correlation exceeding 0.8.
+
+        Raises:
+            ValueError: If the target column or feature columns are missing.
         """
         if target_column not in self.data.columns:
             raise ValueError(f"Target column '{target_column}' does not exist.")
@@ -142,43 +211,154 @@ class DataQualityChecker:
                 correlations[feature] = correlation
         return correlations
 
+    # Additional methods follow the same template with specific functionality...
     def check_missing_values(self):
-        return self.data.isnull().mean() * 100
+        """
+        Calculate the percentage of missing values for each column.
+
+        Returns:
+            pd.Series: A series containing columns with missing value percentages.
+
+        Raises:
+            ValueError: If the dataset is empty.
+        """
+        if self.data.empty:
+            raise ValueError("Dataset is empty.")
+        missing = self.data.isnull().mean() * 100
+        return missing[missing > 0]
 
     def check_duplicates(self):
-        return self.data[self.data.duplicated()]
+        """
+        Identify duplicate rows in the dataset.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing duplicate rows.
+
+        Raises:
+            ValueError: If the dataset is empty.
+        """
+        if self.data.empty:
+            raise ValueError("Dataset is empty.")
+        duplicates = self.data[self.data.duplicated()]
+        return duplicates
 
     def check_outliers(self, threshold=3):
+        """
+        Detect outliers in numeric columns using the Z-score method.
+
+        Args:
+            threshold (float): The Z-score threshold for identifying outliers.
+
+        Returns:
+            pd.Series: A series containing the number of outliers per numeric column.
+
+        Raises:
+            ValueError: If no numeric columns are available in the dataset.
+        """
         numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
-        return ((numeric_data - numeric_data.mean()).abs() > threshold * numeric_data.std()).sum()
+        if numeric_data.empty:
+            raise ValueError("No numeric columns available for outlier detection.")
+        outliers = ((numeric_data - numeric_data.mean()).abs() > threshold * numeric_data.std()).sum()
+        return outliers[outliers > 0]
 
     def check_imbalance(self, column):
+        """
+        Check for class imbalance in a categorical column.
+
+        Args:
+            column (str): The column to analyze for imbalance.
+
+        Returns:
+            pd.Series: A series showing the percentage distribution of each class.
+
+        Raises:
+            ValueError: If the column is missing or not categorical.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_object_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not categorical.")
         return self.data[column].value_counts(normalize=True) * 100
 
     def check_data_type_consistency(self):
+        """
+        Check for inconsistent data types within columns.
+
+        Returns:
+            dict: A dictionary of columns with inconsistent data types.
+
+        Raises:
+            ValueError: If the dataset is empty.
+        """
+        if self.data.empty:
+            raise ValueError("Dataset is empty.")
         inconsistent = {}
         for col in self.data.columns:
-            types = self.data[col].map(type).nunique()
-            if types > 1:
-                inconsistent[col] = types
+            unique_types = self.data[col].map(type).nunique()
+            if unique_types > 1:
+                inconsistent[col] = unique_types
         return inconsistent
 
     def check_correlation(self, threshold=0.9):
-        corr_matrix = self.data.corr()
-        return [
-            (x, y) for x in corr_matrix.columns for y in corr_matrix.columns
-            if x != y and abs(corr_matrix.loc[x, y]) > threshold
+        """
+        Identify highly correlated numeric features.
+
+        Args:
+            threshold (float): The correlation coefficient threshold.
+
+        Returns:
+            list: Pairs of columns with correlations exceeding the threshold.
+
+        Raises:
+            ValueError: If no numeric columns are available in the dataset.
+        """
+        numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
+        if numeric_data.empty:
+            raise ValueError("No numeric columns available for correlation check.")
+        correlation_matrix = numeric_data.corr()
+        correlated_features = [
+            (col1, col2) for col1 in correlation_matrix.columns for col2 in correlation_matrix.columns
+            if col1 != col2 and abs(correlation_matrix.loc[col1, col2]) > threshold
         ]
+        return correlated_features
 
     def check_unique_values(self):
-        return [col for col in self.data.columns if self.data[col].nunique() == 1]
+        """
+        Identify columns with only one unique value.
+
+        Returns:
+            list: Columns with a single unique value.
+
+        Raises:
+            ValueError: If the dataset is empty.
+        """
+        if self.data.empty:
+            raise ValueError("Dataset is empty.")
+        single_value_columns = [col for col in self.data.columns if self.data[col].nunique() == 1]
+        return single_value_columns
 
     def validate_schema(self, schema_file):
-        with open(schema_file, "r") as file:
-            schema = json.load(file)
-        missing_columns = [
-            col for col in schema["columns"] if col not in self.data.columns
-        ]
+        """
+        Validate the dataset schema against a provided JSON schema file.
+
+        Args:
+            schema_file (str): Path to the schema JSON file.
+
+        Returns:
+            list: Columns missing in the dataset but required by the schema.
+
+        Raises:
+            FileNotFoundError: If the schema file does not exist.
+            ValueError: If the schema file is not a valid JSON.
+        """
+        try:
+            with open(schema_file, "r") as file:
+                schema = json.load(file)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Schema file '{schema_file}' not found.")
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON format in schema file.")
+        missing_columns = [col for col in schema["columns"] if col not in self.data.columns]
         return missing_columns
 
     def check_rare_categories(self, column, threshold=1):
@@ -186,34 +366,87 @@ class DataQualityChecker:
         Identify rare categories in a column.
 
         Args:
-            column (str): Name of the column to analyze.
-            threshold (int): Minimum count below which a category is considered rare.
+            column (str): The column to analyze.
+            threshold (int): The minimum count for a category to be considered common.
 
         Returns:
-            list: Categories that are considered rare.
+            list: Categories considered rare.
+
+        Raises:
+            ValueError: If the column is missing.
         """
         if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+            raise ValueError(f"Column '{column}' does not exist.")
         value_counts = self.data[column].value_counts()
         rare_categories = value_counts[value_counts < threshold].index.tolist()
         return rare_categories
 
     def check_column_naming_convention(self, regex_pattern=r"^[a-z_]+$"):
-        pattern = re.compile(regex_pattern)
-        return [col for col in self.data.columns if not pattern.match(col)]
+        """
+        Verify if column names adhere to a specific naming convention.
+
+        Args:
+            regex_pattern (str): The regular expression defining the naming convention.
+
+        Returns:
+            list: Columns not matching the naming convention.
+
+        Raises:
+            ValueError: If the provided regex pattern is invalid.
+        """
+        try:
+            pattern = re.compile(regex_pattern)
+        except re.error:
+            raise ValueError("Invalid regular expression pattern.")
+        inconsistent_columns = [col for col in self.data.columns if not pattern.match(col)]
+        return inconsistent_columns
 
     def detect_anomalies(self, column, contamination=0.05):
-        iso = IsolationForest(contamination=contamination)
-        self.data["anomaly"] = iso.fit_predict(self.data[[column]])
-        return self.data["anomaly"] == -1
+        """
+        Detect anomalies in a numeric column using Isolation Forest.
+
+        Args:
+            column (str): The numeric column to analyze.
+            contamination (float): The proportion of anomalies in the data.
+
+        Returns:
+            pd.Series: A boolean series indicating anomalies.
+
+        Raises:
+            ValueError: If the column is missing or not numeric.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+        isolation_forest = IsolationForest(contamination=contamination, random_state=42)
+        self.data['anomaly'] = isolation_forest.fit_predict(self.data[[column]])
+        return self.data['anomaly'] == -1
 
     def check_sampling_bias(self, column, baseline_distribution):
-        actual_distribution = self.data[column].value_counts(normalize=True)
-        return {
-            cat: actual_distribution.get(cat, 0) - baseline_distribution.get(cat, 0)
-            for cat in baseline_distribution
-        }
+        """
+        Compare the distribution of a column with a baseline distribution.
 
+        Args:
+            column (str): The column to compare.
+            baseline_distribution (dict): Expected distribution as a dictionary.
+
+        Returns:
+            dict: Deviations from the baseline distribution.
+
+        Raises:
+            ValueError: If the column is missing or the baseline distribution is not a dictionary.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not isinstance(baseline_distribution, dict):
+            raise ValueError("Baseline distribution must be provided as a dictionary.")
+        actual_distribution = self.data[column].value_counts(normalize=True).to_dict()
+        deviations = {
+            category: actual_distribution.get(category, 0) - baseline_distribution.get(category, 0)
+            for category in baseline_distribution
+        }
+        return deviations
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
