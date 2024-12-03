@@ -498,27 +498,84 @@ class StatisticalAnalyzer:
 
 
 ### 3. TimeSeriesAnalyzer Class (3 methods)
+import pandas as pd
+import statsmodels.tsa.seasonal as sm
+
 class TimeSeriesAnalyzer:
+    """
+    Analyzes time series data for gaps, seasonality, and rare events.
+
+    Attributes:
+        data (pd.DataFrame): The time series data.
+    """
+
     def __init__(self, data):
+        """
+        Initializes the TimeSeriesAnalyzer with the provided time series data.
+
+        Args:
+            data (pd.DataFrame): The time series data.
+
+        Raises:
+            TypeError: If the data is not a pandas DataFrame.
+        """
+
+        if not isinstance(data, pd.DataFrame):
+            raise TypeError("data must be a pandas DataFrame")
         self.data = data
 
     def check_time_series_gaps(self, timestamp_column):
+        """
+        Analyzes the time series data for gaps in the provided timestamp column.
+
+        Args:
+            timestamp_column (str): The name of the column containing timestamps.
+
+        Returns:
+            dict: A dictionary containing:
+                gaps (int): The total number of missing values in the timestamp column.
+                unordered (int): The number of timestamp values that are out of order.
+        """
+
         self.data[timestamp_column] = pd.to_datetime(self.data[timestamp_column])
-        gaps = self.data[timestamp_column].diff().dt.total_seconds()
-        unordered = (gaps < 0).sum()
-        return {"gaps": gaps.isnull().sum(), "unordered": unordered}
+        gaps = self.data[timestamp_column].isnull().sum()
+        unordered = (self.data[timestamp_column].diff().dt.total_seconds() < 0).sum()
+        return {"gaps": gaps, "unordered": unordered}
 
     def time_series_decomposition(self, column, frequency):
-        series = self.data[column]
-        decomp = sm.tsa.seasonal_decompose(series.dropna(), period=frequency)
+        """
+        Decomposes the time series data in the specified column into trend, seasonality, and residuals using seasonal decomposition.
+
+        Args:
+            column (str): The name of the column containing the time series data.
+            frequency (int): The seasonal period of the data (e.g., 12 for monthly data).
+
+        Returns:
+            statsmodels.tsa.seasonal.seasonal_decompose: The seasonal decomposition object.
+        """
+
+        series = self.data[column].dropna()
+        decomp = sm.seasonal_decompose(series, model='additive', period=frequency)
         decomp.plot()
         plt.show()
         return decomp
 
     def check_rare_events(self, column, z_threshold=3):
-        z_scores = (self.data[column] - self.data[column].mean()) / self.data[column].std()
-        return self.data[z_scores.abs() > z_threshold]
+        """
+        Identifies and returns rows in the data where the absolute value of the z-score
+        in the specified column exceeds the given threshold.
 
+        Args:
+            column (str): The name of the column containing the data for calculating z-scores.
+            z_threshold (float, optional): The threshold for identifying rare events (defaults to 3).
+
+        Returns:
+            pd.DataFrame: A DataFrame containing only the rows where the absolute value of
+                the z-score in the specified column exceeds the threshold.
+        """
+
+        z_scores = abs((self.data[column] - self.data[column].mean()) / self.data[column].std())
+        return self.data[z_scores > z_threshold]
 
 ### 4. NLPAnalyzer Class (14 methods)
 class NLPAnalyzer:
