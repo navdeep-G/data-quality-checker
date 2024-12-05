@@ -1,6 +1,6 @@
 # Dataset Quality Checker
 
-A Python tool for assessing and ensuring data quality, including detecting missing values, duplicates, outliers, class imbalances, and more. This tool is designed to handle common data quality issues and support advanced quality checks such as schema validation, semantic consistency, and data drift detection.
+A Python package designed to evaluate and maintain data quality by identifying missing values, duplicates, outliers, class imbalances, and other common issues. It also supports advanced quality assessments, including schema validation, semantic consistency checks, and data drift detection.
 
 ---
 
