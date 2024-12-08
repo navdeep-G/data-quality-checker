@@ -53,6 +53,18 @@ class DataQualityChecker:
             "outliers": self.check_outliers(),
         }
         return report
+    def check_email_validity(self, column):
+        """
+        Checks if email addresses in a column are valid.
+
+        Args:
+            column (str): The column name to check.
+
+        Returns:
+            pd.Series: A boolean series indicating invalid email addresses.
+        """
+        email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+        return ~self.data[column].astype(str).str.match(email_regex)
 
     def check_cross_column_dependency(self, column1, column2, rule):
         """
