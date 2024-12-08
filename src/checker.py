@@ -54,6 +54,48 @@ class DataQualityChecker:
             "outliers": self.check_outliers(),
         }
         return report
+
+    def check_temporal_data_consistency(self, timestamp_column, interval_columns=None):
+        """
+        Validate chronological order and check for overlapping time intervals.
+
+        Args:
+            timestamp_column (str): The name of the column containing timestamps.
+            interval_columns (tuple, optional): A tuple of two column names representing start and end times for intervals.
+
+        Returns:
+            dict: A dictionary containing:
+                - unordered_timestamps: The number of unordered timestamps.
+                - overlapping_intervals: Rows with overlapping intervals (if interval_columns is provided).
+        Raises:
+            ValueError: If the specified columns do not exist or are invalid.
+        """
+        if timestamp_column not in self.data.columns:
+            raise ValueError(f"Timestamp column '{timestamp_column}' does not exist in the dataset.")
+
+        # Validate timestamp column for chronological order
+        self.data[timestamp_column] = pd.to_datetime(self.data[timestamp_column], errors='coerce')
+        unordered_timestamps = (self.data[timestamp_column].diff() < pd.Timedelta(0)).sum()
+
+        result = {"unordered_timestamps": unordered_timestamps}
+
+        # If interval columns are provided, check for overlaps
+        if interval_columns:
+            start_col, end_col = interval_columns
+            if start_col not in self.data.columns or end_col not in self.data.columns:
+                raise ValueError("Start or end column does not exist in the dataset.")
+
+            self.data[start_col] = pd.to_datetime(self.data[start_col], errors='coerce')
+            self.data[end_col] = pd.to_datetime(self.data[end_col], errors='coerce')
+
+            overlapping_intervals = self.data[
+                (self.data[end_col] > self.data[start_col].shift(-1)) &
+                (self.data[start_col] < self.data[end_col].shift(-1))
+                ]
+            result["overlapping_intervals"] = overlapping_intervals
+
+        return result
+
     def check_email_validity(self, column):
         """
         Checks if email addresses in a column are valid.
