@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import re
 import json
+import phonenumbers
 
 
 ### 1. DataQualityChecker Class (20 methods)
@@ -66,6 +67,26 @@ class DataQualityChecker:
         email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
         return ~self.data[column].astype(str).str.match(email_regex)
 
+    def check_phone_number_validity(self, column, country_code="+1"):
+        """
+        Checks if phone numbers in a column are valid for a specific country code.
+
+        Args:
+            column (str): The column name to check.
+            country_code (str): The country code to use for validation.
+
+        Returns:
+            pd.Series: A boolean series indicating invalid phone numbers.
+        """
+
+        def is_valid_number(number):
+            try:
+                z = phonenumbers.parse(number, country_code)
+                return phonenumbers.is_valid_number(z)
+            except (phonenumbers.NumberParseException, phonenumbers.phonenumberutil.NumberParseException):
+                return False
+
+        return self.data[column].apply(is_valid_number)
     def check_cross_column_dependency(self, column1, column2, rule):
         """
         Check for violations of cross-column dependency rules.
