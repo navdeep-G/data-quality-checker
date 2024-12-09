@@ -55,6 +55,40 @@ class DataQualityChecker:
         }
         return report
 
+    def check_numeric_column_ranges(self, column_ranges):
+        """
+        Ensure numeric columns fall within pre-defined acceptable ranges.
+
+        Args:
+            column_ranges (dict): A dictionary where keys are column names and values are tuples (min, max)
+                                  defining the acceptable range for the column.
+
+        Returns:
+            dict: A dictionary containing columns and their rows that fall outside the defined ranges.
+
+        Raises:
+            ValueError: If the specified columns do not exist or are not numeric.
+        """
+        if not isinstance(column_ranges, dict):
+            raise ValueError(
+                "column_ranges must be a dictionary with column names as keys and (min, max) tuples as values.")
+
+        invalid_data = {}
+
+        for column, (min_val, max_val) in column_ranges.items():
+            if column not in self.data.columns:
+                raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+            if not pd.api.types.is_numeric_dtype(self.data[column]):
+                raise ValueError(f"Column '{column}' is not numeric.")
+
+            # Check for rows outside the range
+            invalid_rows = self.data[(self.data[column] < min_val) | (self.data[column] > max_val)]
+            if not invalid_rows.empty:
+                invalid_data[column] = invalid_rows
+
+        return invalid_data
+
     def check_temporal_data_consistency(self, timestamp_column, interval_columns=None):
         """
         Validate chronological order and check for overlapping time intervals.
