@@ -1,55 +1,54 @@
 # Dataset Quality Checker
 
-A Python package designed to evaluate and maintain data quality by identifying missing values, duplicates, outliers, class imbalances, and other common issues. It also supports advanced quality assessments, including schema validation, semantic consistency checks, and data drift detection.
+A Python package designed to evaluate and maintain data quality by identifying common data issues like missing values, duplicates, outliers, and class imbalances. It also includes advanced assessments such as schema validation, semantic consistency checks, and data drift detection, making it a versatile tool for ensuring the reliability of your datasets.
 
 ---
 
 ## Features
 
-### Basic Checks
+### 🔍 **Basic Checks**
 - **Missing Values**: Identify columns with missing data and calculate the percentage of missing values.
 - **Duplicate Rows**: Detect and return duplicate rows in the dataset.
 - **Outliers**: Detect numeric outliers using Z-scores.
 - **Class Imbalance**: Analyze class distribution for categorical columns.
 
-### Advanced Checks
-- **Schema Validation**: Validate data against a predefined schema for type, format, and range constraints.
+### 🚀 **Advanced Checks**
+- **Schema Validation**: Ensure the dataset conforms to a predefined schema with type, format, and range constraints.
 - **Data Type Consistency**: Identify columns with mixed or inconsistent data types.
-- **Correlation Analysis**: Flag highly correlated numeric features to avoid redundancy.
-- **Unique Values**: Identify columns with only a single unique value.
-- **Rare Categories**: Detect rare categories in categorical columns based on a frequency threshold.
-- **Multicollinearity**: Use Variance Inflation Factor (VIF) to detect multicollinearity.
-- **Unexpected Values**: Identify unexpected or invalid values in a categorical column.
-- **Column Naming Convention**: Check if column names follow a specific naming pattern.
+- **Correlation Analysis**: Flag highly correlated numeric features to reduce redundancy.
+- **Unique Values**: Detect columns with only a single unique value.
+- **Rare Categories**: Identify rare categories in categorical columns using a frequency threshold.
+- **Multicollinearity**: Detect multicollinearity using the Variance Inflation Factor (VIF).
+- **Unexpected Values**: Flag invalid or unexpected values in categorical columns.
+- **Column Naming Convention**: Verify column names adhere to a specified naming pattern.
 
-### Time-Series and Text Analysis
-- **Time-Series Gaps**: Detect missing or unordered timestamps in time-series data.
-- **Temporal Trends**: Analyze anomalies or deviations in numeric data over time.
+### 📈 **Time-Series and Text Analysis**
+- **Time-Series Gaps**: Identify missing or unordered timestamps in time-series data.
+- **Temporal Trends**: Detect anomalies or deviations in numeric data over time.
 - **Seasonality Detection**: Identify seasonal patterns in time-series data.
-- **Text Length**: Check for excessively long text entries in a column.
-- **Text Similarity**: Identify pairs of text entries with high similarity using a similarity threshold.
+- **Text Length**: Flag excessively long text entries in a column.
+- **Text Similarity**: Identify pairs of highly similar text entries based on a similarity threshold.
 
-### Data Drift and Anomaly Detection
-- **Data Drift**: Compare the distribution of a column to a baseline dataset to detect drift.
-- **Anomalies**: Use Isolation Forest to detect anomalies in numeric data.
-- **Rare Events**: Identify rare numeric events using statistical thresholds.
+### 📊 **Data Drift and Anomaly Detection**
+- **Data Drift**: Compare column distributions to a baseline dataset for drift detection.
+- **Anomalies**: Use Isolation Forest to identify anomalies in numeric data.
+- **Rare Events**: Detect rare numeric events using statistical thresholds.
 
-### Semantic and Cross-Column Validation
-- **Semantic Consistency**: Validate values in a column against a predefined semantic mapping.
-- **Cross-Column Dependency**: Verify that cross-column rules and dependencies are satisfied.
-- **Conditional Probabilities**: Check if conditional probabilities deviate from expected distributions.
+### 🌐 **Semantic and Cross-Column Validation**
+- **Semantic Consistency**: Validate column values against a predefined semantic mapping.
+- **Cross-Column Dependency**: Ensure that cross-column rules and dependencies are satisfied.
+- **Conditional Probabilities**: Detect deviations in expected conditional probabilities.
 
 ---
 
 ## Installation
 
-Clone the repository and install dependencies:
+Clone the repository and install the required dependencies:
 
 ```bash
 git clone https://github.com/username/dataset-quality-checker.git
 cd dataset-quality-checker
 pip install -r requirements.txt
-```
 
 ## Usage
 To use the dataset quality checker, import the DatasetQualityChecker class:
