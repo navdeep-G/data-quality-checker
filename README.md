@@ -49,11 +49,11 @@ Clone the repository and install the required dependencies:
 git clone https://github.com/username/dataset-quality-checker.git
 cd dataset-quality-checker
 pip install -r requirements.txt
+```
 
 ## Usage
 To use the dataset quality checker, import the DatasetQualityChecker class:
 
-python
 ```
 from src.checker import DatasetQualityChecker
 import pandas as pd
