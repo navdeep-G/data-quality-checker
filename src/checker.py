@@ -55,6 +55,23 @@ class DataQualityChecker:
         }
         return report
 
+    def detect_empty_columns(self):
+        """
+        Identify columns in the dataset that are completely empty or contain only null values.
+
+        Returns:
+            list: A list of column names that are completely empty.
+
+        Raises:
+            ValueError: If the dataset is empty.
+        """
+        if self.data.empty:
+            raise ValueError("The dataset is empty.")
+
+        # Check for columns where all values are null
+        empty_columns = [col for col in self.data.columns if self.data[col].isnull().all()]
+        return empty_columns
+    
     def check_numeric_column_ranges(self, column_ranges):
         """
         Ensure numeric columns fall within pre-defined acceptable ranges.
