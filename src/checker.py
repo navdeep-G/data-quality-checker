@@ -55,6 +55,57 @@ class DataQualityChecker:
         }
         return report
 
+    def check_uniform_distribution(self, column, p_value_threshold=0.05):
+        """
+        Test if a numeric or categorical column follows a uniform distribution.
+
+        Args:
+            column (str): The name of the column to test.
+            p_value_threshold (float): The p-value threshold for rejecting the null hypothesis.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'is_uniform': True if the column is uniformly distributed, False otherwise.
+                - 'p_value': The p-value from the chi-squared or KS test.
+
+        Raises:
+            ValueError: If the column does not exist or is not numeric/categorical.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        # Check for numeric column
+        if pd.api.types.is_numeric_dtype(self.data[column]):
+            from scipy.stats import kstest
+            # Normalize data range to [0, 1]
+            col_data = self.data[column].dropna()
+            min_val, max_val = col_data.min(), col_data.max()
+            scaled_data = (col_data - min_val) / (max_val - min_val)
+
+            # Perform KS test against uniform distribution
+            ks_stat, p_value = kstest(scaled_data, 'uniform')
+            return {
+                "is_uniform": p_value > p_value_threshold,
+                "p_value": p_value
+            }
+
+        # Check for categorical column
+        elif pd.api.types.is_object_dtype(self.data[column]):
+            from scipy.stats import chisquare
+            # Calculate observed frequencies
+            col_data = self.data[column].dropna()
+            observed_freq = col_data.value_counts()
+            expected_freq = [len(col_data) / len(observed_freq)] * len(observed_freq)
+
+            # Perform chi-squared test
+            chi_stat, p_value = chisquare(observed_freq, expected_freq)
+            return {
+                "is_uniform": p_value > p_value_threshold,
+                "p_value": p_value
+            }
+        else:
+            raise ValueError(f"Column '{column}' is not numeric or categorical.")
+
     def detect_empty_columns(self):
         """
         Identify columns in the dataset that are completely empty or contain only null values.
@@ -71,7 +122,7 @@ class DataQualityChecker:
         # Check for columns where all values are null
         empty_columns = [col for col in self.data.columns if self.data[col].isnull().all()]
         return empty_columns
-    
+
     def check_numeric_column_ranges(self, column_ranges):
         """
         Ensure numeric columns fall within pre-defined acceptable ranges.
