@@ -55,6 +55,63 @@ class DataQualityChecker:
         }
         return report
 
+    def perform_hypothesis_testing(self, test_type, column1, column2=None, group_column=None):
+        """
+        Perform hypothesis testing using t-tests, chi-squared tests, or ANOVA.
+
+        Args:
+            test_type (str): The type of test to perform. Options: 't-test', 'chi-squared', 'anova'.
+            column1 (str): The first column involved in the test (dependent or observed variable).
+            column2 (str, optional): The second column for t-tests or chi-squared tests.
+            group_column (str, optional): The grouping column for ANOVA.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'test_statistic': The test statistic.
+                - 'p_value': The p-value of the test.
+
+        Raises:
+            ValueError: If the input parameters or column data types are invalid.
+        """
+        if test_type not in ['t-test', 'chi-squared', 'anova']:
+            raise ValueError("Invalid test_type. Choose from 't-test', 'chi-squared', or 'anova'.")
+
+        if column1 not in self.data.columns:
+            raise ValueError(f"Column '{column1}' does not exist in the dataset.")
+
+        if test_type == 't-test':
+            if column2 is None or column2 not in self.data.columns:
+                raise ValueError(f"Column '{column2}' must be specified and exist in the dataset for a t-test.")
+
+            # Perform independent t-test
+            from scipy.stats import ttest_ind
+            group1 = self.data[column1].dropna()
+            group2 = self.data[column2].dropna()
+            test_statistic, p_value = ttest_ind(group1, group2, equal_var=False)
+
+        elif test_type == 'chi-squared':
+            if column2 is None or column2 not in self.data.columns:
+                raise ValueError(
+                    f"Column '{column2}' must be specified and exist in the dataset for a chi-squared test.")
+
+            # Perform chi-squared test
+            from scipy.stats import chi2_contingency
+            contingency_table = pd.crosstab(self.data[column1], self.data[column2])
+            test_statistic, p_value, _, _ = chi2_contingency(contingency_table)
+
+        elif test_type == 'anova':
+            if group_column is None or group_column not in self.data.columns:
+                raise ValueError(f"Group column '{group_column}' must be specified and exist in the dataset for ANOVA.")
+
+            # Perform one-way ANOVA
+            from scipy.stats import f_oneway
+            groups = [group[column1].dropna().values for _, group in self.data.groupby(group_column)]
+            test_statistic, p_value = f_oneway(*groups)
+
+        return {
+            "test_statistic": test_statistic,
+            "p_value": p_value
+        }
     def check_uniform_distribution(self, column, p_value_threshold=0.05):
         """
         Test if a numeric or categorical column follows a uniform distribution.
