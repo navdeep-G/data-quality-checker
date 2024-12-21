@@ -880,6 +880,60 @@ class TimeSeriesAnalyzer:
             raise TypeError("data must be a pandas DataFrame")
         self.data = data
 
+    def detect_non_stationarity(self, column, significance_level=0.05):
+        """
+        Apply Augmented Dickey-Fuller (ADF) test to check time-series stationarity.
+
+        Args:
+            column (str): The time-series column to analyze.
+            significance_level (float): The significance level for the ADF test (default is 0.05).
+
+        Returns:
+            dict: A dictionary containing:
+                - 'adf_statistic': The ADF test statistic.
+                - 'p_value': The p-value from the test.
+                - 'stationary': Boolean indicating if the series is stationary.
+                - 'critical_values': Critical values at different confidence levels.
+
+        Raises:
+            ValueError: If the column does not exist, is not numeric, or contains insufficient data.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric for stationarity testing.")
+
+        from statsmodels.tsa.stattools import adfuller
+
+        # Drop missing values
+        ts_data = self.data[column].dropna()
+
+        if len(ts_data) < 10:
+            raise ValueError("Insufficient data for stationarity testing. At least 10 data points are required.")
+
+        # Perform Augmented Dickey-Fuller test
+        adf_result = adfuller(ts_data)
+        adf_statistic, p_value, _, _, critical_values, _ = adf_result
+
+        result = {
+            "adf_statistic": adf_statistic,
+            "p_value": p_value,
+            "stationary": p_value <= significance_level,
+            "critical_values": critical_values
+        }
+
+        # Plot the time series
+        plt.figure(figsize=(10, 6))
+        plt.plot(ts_data, label='Time Series Data')
+        plt.title(f'ADF Test for Stationarity on {column}')
+        plt.xlabel('Time')
+        plt.ylabel(column)
+        plt.legend()
+        plt.show()
+
+        return result
+
     def check_time_series_gaps(self, timestamp_column):
         """
         Analyzes the time series data for gaps in the provided timestamp column.
