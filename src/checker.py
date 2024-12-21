@@ -880,6 +880,67 @@ class TimeSeriesAnalyzer:
             raise TypeError("data must be a pandas DataFrame")
         self.data = data
 
+    def seasonal_trend_analysis(self, column, timestamp_column, period='M', model='additive'):
+        """
+        Plot seasonal trends and anomalies for long-term time-series data.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+            timestamp_column (str): The column containing timestamps.
+            period (str): Frequency of the time series ('D' for daily, 'M' for monthly, 'Y' for yearly).
+            model (str): Type of decomposition model - 'additive' or 'multiplicative'.
+
+        Returns:
+            dict: A dictionary containing the decomposed components:
+                - 'trend': The trend component.
+                - 'seasonal': The seasonal component.
+                - 'residual': The residual (anomaly) component.
+
+        Raises:
+            ValueError: If columns are invalid or data is insufficient for analysis.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if timestamp_column not in self.data.columns:
+            raise ValueError(f"Timestamp column '{timestamp_column}' does not exist in the dataset.")
+
+        # Ensure timestamps are in datetime format
+        self.data[timestamp_column] = pd.to_datetime(self.data[timestamp_column], errors='coerce')
+        self.data = self.data.dropna(subset=[timestamp_column, column])
+        self.data.set_index(timestamp_column, inplace=True)
+        self.data.sort_index(inplace=True)
+
+        if len(self.data) < 2:
+            raise ValueError("Insufficient data for seasonal analysis. At least two timestamps are required.")
+
+        from statsmodels.tsa.seasonal import seasonal_decompose
+
+        # Perform seasonal decomposition
+        decomposition = seasonal_decompose(self.data[column], model=model, period={'D': 1, 'M': 12, 'Y': 365}[period])
+
+        # Plot decomposition
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(12, 10))
+        decomposition.observed.plot(ax=ax1)
+        ax1.set_title('Observed')
+
+        decomposition.trend.plot(ax=ax2)
+        ax2.set_title('Trend')
+
+        decomposition.seasonal.plot(ax=ax3)
+        ax3.set_title('Seasonality')
+
+        decomposition.resid.plot(ax=ax4)
+        ax4.set_title('Residuals (Anomalies)')
+
+        plt.tight_layout()
+        plt.show()
+
+        return {
+            "trend": decomposition.trend,
+            "seasonal": decomposition.seasonal,
+            "residual": decomposition.resid
+        }
+
     def detect_non_stationarity(self, column, significance_level=0.05):
         """
         Apply Augmented Dickey-Fuller (ADF) test to check time-series stationarity.
