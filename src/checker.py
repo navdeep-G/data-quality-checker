@@ -55,6 +55,61 @@ class DataQualityChecker:
         }
         return report
 
+    def analyze_confidence_intervals(self, column, confidence_level=0.95):
+        """
+        Calculate and plot confidence intervals for a numeric column.
+
+        Args:
+            column (str): The numeric column to analyze.
+            confidence_level (float): The confidence level for the interval (default is 0.95).
+
+        Returns:
+            dict: A dictionary containing:
+                - 'mean': The mean of the column.
+                - 'lower_bound': Lower bound of the confidence interval.
+                - 'upper_bound': Upper bound of the confidence interval.
+
+        Raises:
+            ValueError: If the column is not numeric or does not exist.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+
+        import scipy.stats as stats
+
+        # Drop missing values
+        data = self.data[column].dropna()
+
+        # Calculate sample mean and standard error
+        mean = data.mean()
+        sem = stats.sem(data)  # Standard error of the mean
+
+        # Calculate confidence interval
+        margin_of_error = stats.t.ppf((1 + confidence_level) / 2, len(data) - 1) * sem
+        lower_bound = mean - margin_of_error
+        upper_bound = mean + margin_of_error
+
+        # Plotting the confidence interval
+        plt.figure(figsize=(8, 4))
+        plt.axvline(mean, color='blue', linestyle='--', label='Mean')
+        plt.axvline(lower_bound, color='green', linestyle='--', label='Lower Bound')
+        plt.axvline(upper_bound, color='red', linestyle='--', label='Upper Bound')
+        plt.hist(data, bins=30, alpha=0.5, color='gray', edgecolor='black')
+        plt.title(f'Confidence Interval for {column} ({confidence_level * 100:.0f}% Confidence Level)')
+        plt.xlabel(column)
+        plt.ylabel('Frequency')
+        plt.legend()
+        plt.show()
+
+        return {
+            "mean": mean,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound
+        }
+
     def perform_hypothesis_testing(self, test_type, column1, column2=None, group_column=None):
         """
         Perform hypothesis testing using t-tests, chi-squared tests, or ANOVA.
