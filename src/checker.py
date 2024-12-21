@@ -55,6 +55,73 @@ class DataQualityChecker:
         }
         return report
 
+    def bootstrap_sampling_analysis(self, column, metric='mean', n_iterations=1000, confidence_level=0.95):
+        """
+        Use bootstrapping to estimate the variability of dataset metrics.
+
+        Args:
+            column (str): The numeric column to perform bootstrap sampling on.
+            metric (str): The metric to estimate. Options: 'mean', 'median', 'std'.
+            n_iterations (int): Number of bootstrap samples to draw.
+            confidence_level (float): Confidence level for the confidence interval.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'bootstrap_estimate': The bootstrap estimate of the metric.
+                - 'lower_bound': Lower bound of the confidence interval.
+                - 'upper_bound': Upper bound of the confidence interval.
+                - 'bootstrap_distribution': Array of bootstrap estimates.
+
+        Raises:
+            ValueError: If the column does not exist, is not numeric, or an invalid metric is specified.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+
+        if metric not in ['mean', 'median', 'std']:
+            raise ValueError("Invalid metric. Choose from 'mean', 'median', 'std'.")
+
+        data = self.data[column].dropna().values
+        bootstrap_estimates = []
+
+        # Perform bootstrap sampling
+        np.random.seed(42)  # For reproducibility
+        for _ in range(n_iterations):
+            sample = np.random.choice(data, size=len(data), replace=True)
+            if metric == 'mean':
+                bootstrap_estimates.append(np.mean(sample))
+            elif metric == 'median':
+                bootstrap_estimates.append(np.median(sample))
+            elif metric == 'std':
+                bootstrap_estimates.append(np.std(sample))
+
+        # Calculate confidence interval
+        lower_bound = np.percentile(bootstrap_estimates, (1 - confidence_level) / 2 * 100)
+        upper_bound = np.percentile(bootstrap_estimates, (1 + confidence_level) / 2 * 100)
+        bootstrap_estimate = np.mean(bootstrap_estimates) if metric == 'mean' else np.median(bootstrap_estimates)
+
+        # Plot Bootstrap Distribution
+        plt.figure(figsize=(10, 6))
+        plt.hist(bootstrap_estimates, bins=30, alpha=0.7, edgecolor='black')
+        plt.axvline(lower_bound, color='green', linestyle='--', label='Lower Bound')
+        plt.axvline(upper_bound, color='red', linestyle='--', label='Upper Bound')
+        plt.axvline(bootstrap_estimate, color='blue', linestyle='--', label='Bootstrap Estimate')
+        plt.title(f'Bootstrap Sampling Distribution of {metric} ({confidence_level * 100:.0f}% CI)')
+        plt.xlabel(metric)
+        plt.ylabel('Frequency')
+        plt.legend()
+        plt.show()
+
+        return {
+            "bootstrap_estimate": bootstrap_estimate,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound,
+            "bootstrap_distribution": bootstrap_estimates
+        }
+
     def analyze_confidence_intervals(self, column, confidence_level=0.95):
         """
         Calculate and plot confidence intervals for a numeric column.
