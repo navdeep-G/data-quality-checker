@@ -880,6 +880,73 @@ class TimeSeriesAnalyzer:
             raise TypeError("data must be a pandas DataFrame")
         self.data = data
 
+    def forecast_accuracy_metrics(self, actual_column, predicted_column):
+        """
+        Evaluate forecast accuracy metrics for predictive models.
+
+        Args:
+            actual_column (str): Column containing the actual values.
+            predicted_column (str): Column containing the predicted values.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'RMSE': Root Mean Squared Error.
+                - 'MAPE': Mean Absolute Percentage Error.
+                - 'MAE': Mean Absolute Error.
+                - 'R2': R-squared Score.
+                - 'MedianAE': Median Absolute Error.
+                - 'SMAPE': Symmetric Mean Absolute Percentage Error.
+                - 'Bias': Mean Bias Deviation.
+
+        Raises:
+            ValueError: If the columns do not exist or contain invalid data.
+        """
+        if actual_column not in self.data.columns:
+            raise ValueError(f"Actual values column '{actual_column}' does not exist in the dataset.")
+        if predicted_column not in self.data.columns:
+            raise ValueError(f"Predicted values column '{predicted_column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[actual_column]) or not pd.api.types.is_numeric_dtype(
+                self.data[predicted_column]):
+            raise ValueError("Both actual and predicted columns must be numeric.")
+
+        # Drop missing values
+        valid_data = self.data[[actual_column, predicted_column]].dropna()
+
+        actual = valid_data[actual_column]
+        predicted = valid_data[predicted_column]
+
+        from sklearn.metrics import mean_squared_error, mean_absolute_error, median_absolute_error, r2_score
+
+        # Calculate metrics
+        rmse = mean_squared_error(actual, predicted, squared=False)
+        mae = mean_absolute_error(actual, predicted)
+        median_ae = median_absolute_error(actual, predicted)
+        r2 = r2_score(actual, predicted)
+        mape = (np.abs((actual - predicted) / actual)).mean() * 100
+        smape = (2 * np.abs(actual - predicted) / (np.abs(actual) + np.abs(predicted))).mean() * 100
+        bias = (predicted - actual).mean()
+
+        # Plot actual vs predicted
+        plt.figure(figsize=(12, 6))
+        plt.plot(actual.reset_index(drop=True), label='Actual', marker='o')
+        plt.plot(predicted.reset_index(drop=True), label='Predicted', marker='x')
+        plt.title('Forecast Accuracy: Actual vs Predicted')
+        plt.xlabel('Index')
+        plt.ylabel('Values')
+        plt.legend()
+        plt.show()
+
+        return {
+            "RMSE": rmse,
+            "MAE": mae,
+            "MedianAE": median_ae,
+            "MAPE": mape,
+            "SMAPE": smape,
+            "Bias": bias,
+            "R2": r2
+        }
+
     def seasonal_trend_analysis(self, column, timestamp_column, period='M', model='additive'):
         """
         Plot seasonal trends and anomalies for long-term time-series data.
