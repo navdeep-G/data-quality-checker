@@ -880,6 +880,76 @@ class TimeSeriesAnalyzer:
             raise TypeError("data must be a pandas DataFrame")
         self.data = data
 
+    def detect_change_points(self, column, timestamp_column, method='mean_shift', threshold=1.0):
+        """
+        Identify structural breaks or change points in time-series data.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+            timestamp_column (str): The column containing timestamps.
+            method (str): Method for change point detection. Options: 'mean_shift', 'cumsum'.
+            threshold (float): Threshold for detecting significant change points.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'change_points': Indices or timestamps of detected change points.
+                - 'method': Method used for detection.
+
+        Raises:
+            ValueError: If the columns do not exist, data is insufficient, or invalid method is specified.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if timestamp_column not in self.data.columns:
+            raise ValueError(f"Timestamp column '{timestamp_column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        # Ensure timestamps are in datetime format
+        self.data[timestamp_column] = pd.to_datetime(self.data[timestamp_column], errors='coerce')
+        self.data = self.data.dropna(subset=[timestamp_column, column])
+        self.data.set_index(timestamp_column, inplace=True)
+        self.data.sort_index(inplace=True)
+
+        if len(self.data) < 10:
+            raise ValueError("Insufficient data for change point detection. At least 10 data points are required.")
+
+        import ruptures as rpt
+
+        ts_data = self.data[column].values
+
+        # Choose the method
+        if method == 'mean_shift':
+            model = "l2"  # Least squares for mean shift detection
+        elif method == 'cumsum':
+            model = "l1"  # L1 norm for cumulative sum change detection
+        else:
+            raise ValueError("Invalid method. Choose from 'mean_shift' or 'cumsum'.")
+
+        # Apply change point detection
+        algo = rpt.Pelt(model=model).fit(ts_data)
+        change_points = algo.predict(pen=threshold)
+
+        # Convert indices to timestamps
+        change_timestamps = self.data.index[change_points[:-1]] if change_points else []
+
+        # Plot time-series with detected change points
+        plt.figure(figsize=(12, 6))
+        plt.plot(self.data.index, ts_data, label='Time-Series Data')
+        for cp in change_timestamps:
+            plt.axvline(cp, color='red', linestyle='--', label='Change Point')
+        plt.title(f"Change Point Detection using {method}")
+        plt.xlabel('Timestamp')
+        plt.ylabel(column)
+        plt.legend()
+        plt.show()
+
+        return {
+            "change_points": list(change_timestamps),
+            "method": method
+        }
+
     def forecast_accuracy_metrics(self, actual_column, predicted_column):
         """
         Evaluate forecast accuracy metrics for predictive models.
