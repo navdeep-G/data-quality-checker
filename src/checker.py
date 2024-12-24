@@ -1190,6 +1190,78 @@ class NLPAnalyzer:
     def __init__(self, data):
         self.data = data
 
+    def named_entity_recognition(self, column, model='spacy', entity_types=None):
+        """
+        Extract named entities like names, organizations, or dates from text.
+
+        Args:
+            column (str): The name of the text column to analyze.
+            model (str): NLP model for NER ('spacy' or 'nltk').
+            entity_types (list): List of entity types to filter (e.g., ['PERSON', 'ORG', 'DATE']).
+
+        Returns:
+            pd.Series: A pandas Series containing dictionaries of extracted entities for each row.
+
+        Raises:
+            ValueError: If the column does not exist, is not string type, or invalid model is specified.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        if model not in ['spacy', 'nltk']:
+            raise ValueError("Invalid model. Choose from 'spacy' or 'nltk'.")
+
+        import nltk
+        import re
+        nltk.download('punkt', quiet=True)
+        nltk.download('averaged_perceptron_tagger', quiet=True)
+        nltk.download('maxent_ne_chunker', quiet=True)
+        nltk.download('words', quiet=True)
+
+        results = []
+
+        if model == 'spacy':
+            import spacy
+            nlp = spacy.load('en_core_web_sm')
+
+            def extract_entities_spacy(text):
+                if pd.isnull(text) or not text.strip():
+                    return {}
+                doc = nlp(text)
+                entities = {ent.label_: [] for ent in doc.ents}
+                for ent in doc.ents:
+                    if not entity_types or ent.label_ in entity_types:
+                        entities.setdefault(ent.label_, []).append(ent.text)
+                return entities
+
+            results = self.data[column].apply(extract_entities_spacy)
+
+        elif model == 'nltk':
+            from nltk import word_tokenize, pos_tag, ne_chunk
+            from nltk.tree import Tree
+
+            def extract_entities_nltk(text):
+                if pd.isnull(text) or not text.strip():
+                    return {}
+                tokens = word_tokenize(text)
+                tagged = pos_tag(tokens)
+                chunked = ne_chunk(tagged)
+                entities = {}
+                for subtree in chunked:
+                    if isinstance(subtree, Tree):
+                        entity_label = subtree.label()
+                        entity_text = " ".join([token for token, pos in subtree.leaves()])
+                        if not entity_types or entity_label in entity_types:
+                            entities.setdefault(entity_label, []).append(entity_text)
+                return entities
+
+            results = self.data[column].apply(extract_entities_nltk)
+
+        return results
+
     def text_tokenization(self, column, level='word', language='english'):
         """
         Tokenize text into words or sentences for pre-processing.
