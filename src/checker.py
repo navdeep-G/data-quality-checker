@@ -1190,6 +1190,39 @@ class NLPAnalyzer:
     def __init__(self, data):
         self.data = data
 
+    def text_tokenization(self, column, level='word', language='english'):
+        """
+        Tokenize text into words or sentences for pre-processing.
+
+        Args:
+            column (str): The name of the text column to tokenize.
+            level (str): Level of tokenization - 'word' or 'sentence'.
+            language (str): Language of the text (default is 'english').
+
+        Returns:
+            pd.Series: A pandas Series containing tokenized words or sentences for each row.
+
+        Raises:
+            ValueError: If the column does not exist or is not of string type.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        import nltk
+        from nltk.tokenize import word_tokenize, sent_tokenize
+
+        nltk.download('punkt', quiet=True)  # Ensure tokenizers are downloaded
+
+        if level == 'word':
+            return self.data[column].fillna("").apply(lambda x: word_tokenize(x, language=language))
+        elif level == 'sentence':
+            return self.data[column].fillna("").apply(lambda x: sent_tokenize(x, language=language))
+        else:
+            raise ValueError("Invalid level. Choose from 'word' or 'sentence'.")
+
     def check_text_similarity(self, column, similarity_threshold=0.8):
         """
         Identify pairs of text entries in a column with high similarity.
