@@ -1190,6 +1190,40 @@ class NLPAnalyzer:
     def __init__(self, data):
         self.data = data
 
+    def topic_modeling(self, column, n_topics=5, n_top_words=5):
+        """
+        Perform topic modeling on a text column using Latent Dirichlet Allocation (LDA).
+
+        Args:
+            column (str): The text column to analyze.
+            n_topics (int): Number of topics to identify.
+            n_top_words (int): Number of top words per topic.
+
+        Returns:
+            list: A list of topics with top words.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        from sklearn.feature_extraction.text import CountVectorizer
+        from sklearn.decomposition import LatentDirichletAllocation
+
+        text_data = self.data[column].dropna().astype(str).tolist()
+        vectorizer = CountVectorizer(stop_words='english')
+        text_matrix = vectorizer.fit_transform(text_data)
+
+        lda = LatentDirichletAllocation(n_components=n_topics, random_state=42)
+        lda.fit(text_matrix)
+
+        feature_names = vectorizer.get_feature_names_out()
+        topics = []
+        for topic_idx, topic in enumerate(lda.components_):
+            top_words = [feature_names[i] for i in topic.argsort()[:-n_top_words - 1:-1]]
+            topics.append(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
+        return topics
+
     def named_entity_recognition(self, column, model='spacy', entity_types=None):
         """
         Extract named entities like names, organizations, or dates from text.
