@@ -1190,6 +1190,36 @@ class NLPAnalyzer:
     def __init__(self, data):
         self.data = data
 
+    def named_entity_frequency(self, column, entity_type='PERSON', model='spacy'):
+        """
+        Calculate the frequency of a specific named entity type in a text column.
+
+        Args:
+            column (str): The text column to analyze.
+            entity_type (str): The entity type to count (e.g., PERSON, ORG, DATE).
+            model (str): NLP model for NER ('spacy').
+
+        Returns:
+            dict: Frequency distribution of named entities of the specified type.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        import spacy
+        nlp = spacy.load('en_core_web_sm')
+
+        entity_counts = {}
+
+        for text in self.data[column].dropna():
+            doc = nlp(text)
+            for ent in doc.ents:
+                if ent.label_ == entity_type:
+                    entity_counts[ent.text] = entity_counts.get(ent.text, 0) + 1
+
+        return dict(sorted(entity_counts.items(), key=lambda x: x[1], reverse=True))
+
     def topic_modeling(self, column, n_topics=5, n_top_words=5):
         """
         Perform topic modeling on a text column using Latent Dirichlet Allocation (LDA).
