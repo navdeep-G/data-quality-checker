@@ -1190,6 +1190,34 @@ class NLPAnalyzer:
     def __init__(self, data):
         self.data = data
 
+    def extract_keywords(self, column, top_n=10):
+        """
+        Extract keywords from text data using RAKE (Rapid Automatic Keyword Extraction).
+
+        Args:
+            column (str): The text column to extract keywords from.
+            top_n (int): Number of top keywords to return.
+
+        Returns:
+            pd.Series: Keywords extracted from each row.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        from rake_nltk import Rake
+
+        rake = Rake()
+
+        def extract(text):
+            if pd.isnull(text):
+                return []
+            rake.extract_keywords_from_text(text)
+            return rake.get_ranked_phrases()[:top_n]
+
+        return self.data[column].apply(extract)
+
     def named_entity_frequency(self, column, entity_type='PERSON', model='spacy'):
         """
         Calculate the frequency of a specific named entity type in a text column.
