@@ -1190,6 +1190,25 @@ class NLPAnalyzer:
     def __init__(self, data):
         self.data = data
 
+    def correct_spelling(self, column):
+        """
+        Correct spelling errors in a text column.
+
+        Args:
+            column (str): The text column to correct.
+
+        Returns:
+            pd.Series: Text column with corrected spelling.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        from textblob import TextBlob
+
+        return self.data[column].apply(lambda x: str(TextBlob(x).correct()) if pd.notnull(x) else x)
+
     def extract_keywords(self, column, top_n=10):
         """
         Extract keywords from text data using RAKE (Rapid Automatic Keyword Extraction).
