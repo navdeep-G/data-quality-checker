@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 from scipy.stats import ks_2samp
 from statsmodels.stats.outliers_influence import variance_inflation_factor
@@ -9,13 +8,15 @@ from langdetect import detect
 from textblob import TextBlob
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.ensemble import IsolationForest
-from difflib import SequenceMatcher
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
 import json
 import phonenumbers
+import gensim.downloader as api
+import pandas as pd
+import statsmodels.tsa.seasonal as sm
 
 
 ### 1. DataQualityChecker Class (20 methods)
@@ -866,9 +867,6 @@ class StatisticalAnalyzer:
 
 
 ### 3. TimeSeriesAnalyzer Class (3 methods)
-import pandas as pd
-import statsmodels.tsa.seasonal as sm
-
 class TimeSeriesAnalyzer:
     """
     Analyzes time series data for gaps, seasonality, and rare events.
@@ -1201,6 +1199,46 @@ class TimeSeriesAnalyzer:
 class NLPAnalyzer:
     def __init__(self, data):
         self.data = data
+        self.model = self._load_word2vec_model()
+
+    @staticmethod
+    def _load_word2vec_model():
+        """
+        Load Word2Vec model (cached for reuse).
+
+        Returns:
+            model: Pre-trained Word2Vec model.
+        """
+        print("🔄 Loading Word2Vec model (Google News 300)...")
+        return api.load('word2vec-google-news-300')
+
+    def word_embedding_similarity(self, column, word1, word2):
+        """
+        Calculate similarity between two words for each row in a specified text column.
+
+        Args:
+            column (str): The text column to analyze.
+            word1 (str): First word for comparison.
+            word2 (str): Second word for comparison.
+
+        Returns:
+            pd.Series: A Pandas Series with cosine similarity scores for each row.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' not found in the dataset.")
+
+        if not word1 or not word2:
+            raise ValueError("Both word1 and word2 must be non-empty strings.")
+
+        def calculate_similarity(row):
+            try:
+                if pd.isnull(row):
+                    return None
+                return self.model.similarity(word1, word2)
+            except KeyError as e:
+                return f"Word not found in vocabulary: {e}"
+
+        return self.data[column].apply(calculate_similarity)
 
     def correct_spelling(self, column):
         """
