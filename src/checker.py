@@ -606,7 +606,7 @@ class DataQualityChecker:
             threshold (float): The Z-score threshold for identifying outliers.
 
         Returns:
-            pd.Series: A series containing the number of outliers per numeric column.
+            pd.DataFrame: A DataFrame containing numeric columns and their corresponding outlier counts.
 
         Raises:
             ValueError: If no numeric columns are available in the dataset.
@@ -614,8 +614,20 @@ class DataQualityChecker:
         numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
         if numeric_data.empty:
             raise ValueError("No numeric columns available for outlier detection.")
-        outliers = ((numeric_data - numeric_data.mean()).abs() > threshold * numeric_data.std()).sum()
-        return outliers[outliers > 0]
+
+        # Calculate Z-scores
+        z_scores = (numeric_data - numeric_data.mean()) / numeric_data.std()
+
+        # Count outliers per column
+        outlier_counts = (z_scores.abs() > threshold).sum()
+
+        # Create a summary DataFrame
+        outlier_summary = pd.DataFrame({
+            'Column': outlier_counts.index,
+            'Outlier_Count': outlier_counts.values
+        }).sort_values(by='Outlier_Count', ascending=False).reset_index(drop=True)
+
+        return outlier_summary
 
     def check_imbalance(self, column):
         """

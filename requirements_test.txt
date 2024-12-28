@@ -1,0 +1,16 @@
+# Base project requirements
+-r requirements.txt
+
+# Testing dependencies
+pytest>=7.0.0
+pytest-cov>=3.0.0
+
+# Optional: Mocking libraries (if needed in future tests)
+pytest-mock>=3.6.0
+
+# Optional: Type checking (if you're using type hints in your tests)
+mypy>=0.950
+
+# Optional: Code style checks (to ensure clean code in tests)
+flake8>=4.0.1
+black>=22.0
