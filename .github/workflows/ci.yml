@@ -1,0 +1,41 @@
+name: CI - Data Quality Checker
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚀 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements_test.txt
+
+      - name: 📚 Install Package
+        run: |
+          pip install .
+
+      - name: ✅ Verify Installation
+        run: |
+          python -c "import dataset_quality_checker; print('Package imported successfully!')"
+
+      - name: 🧪 Run Tests
+        run: |
+          pytest tests --disable-warnings
