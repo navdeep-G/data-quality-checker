@@ -37,8 +37,29 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements_test.txt
+          if [ -f ./requirements.txt ]; then
+            pip install -r ./requirements.txt
+          else
+            echo "requirements.txt not found in root. Checking one level up..."
+            if [ -f ../requirements.txt ]; then
+              pip install -r ../requirements.txt
+            else
+              echo "requirements.txt not found!"
+              exit 1
+            fi
+          fi
+
+          if [ -f ./requirements_test.txt ]; then
+            pip install -r ./requirements_test.txt
+          else
+            echo "requirements_test.txt not found in root. Checking one level up..."
+            if [ -f ../requirements_test.txt ]; then
+              pip install -r ../requirements_test.txt
+            else
+              echo "requirements_test.txt not found!"
+              exit 1
+            fi
+          fi
 
   install-package:
     name: 📚 Install Package
