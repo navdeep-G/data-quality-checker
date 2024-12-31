@@ -17,6 +17,7 @@ import phonenumbers
 import gensim.downloader as api
 import pandas as pd
 import statsmodels.tsa.seasonal as sm
+from sklearn.ensemble import IsolationForest
 
 
 ### 1. DataQualityChecker Class (20 methods)
@@ -599,36 +600,78 @@ class DataQualityChecker:
         duplicates = self.data[self.data.duplicated()]
         return duplicates
 
-    def check_outliers(self, threshold=3):
+    def check_outliers(self, method='zscore', threshold=3):
         """
-        Detect outliers in numeric columns using the Z-score method.
+        Detect outliers in numeric columns of the dataset using specified statistical or machine learning methods.
 
         Args:
-            threshold (float): The Z-score threshold for identifying outliers.
+            method (str, optional): The method to use for outlier detection.
+                - 'zscore': Uses Z-score to identify outliers based on standard deviation.
+                - 'iqr': Uses the Interquartile Range (IQR) to detect outliers.
+                - 'isolation_forest': Applies Isolation Forest for anomaly detection.
+            threshold (float, optional): The threshold for identifying outliers.
+                - Relevant only for 'zscore' (default is 3).
+                - Ignored for 'iqr' and 'isolation_forest'.
 
         Returns:
-            pd.DataFrame: A DataFrame containing numeric columns and their corresponding outlier counts.
+            pd.DataFrame: A DataFrame containing:
+                - **Column**: Column name.
+                - **Outlier_Count**: Number of outliers detected in each column.
 
         Raises:
             ValueError: If no numeric columns are available in the dataset.
+            ValueError: If an invalid `method` is passed.
+
+        Examples:
+            >>> analyzer = DataAnalyzer(dataframe)
+            >>> analyzer.check_outliers(method='zscore', threshold=3)
+
+            Column    Outlier_Count
+            -------   -------------
+            col1      5
+            col2      2
+
+            >>> analyzer.check_outliers(method='iqr')
+
+            Column    Outlier_Count
+            -------   -------------
+            col1      3
+            col2      1
+
+            >>> analyzer.check_outliers(method='isolation_forest')
+
+            Column    Outlier_Count
+            -------   -------------
+            col1      7
+            col2      4
+
+        Notes:
+            - **Z-score Method:** Outliers are defined as points where |z| > threshold.
+            - **IQR Method:** Outliers are points outside the range [Q1 - 1.5 * IQR, Q3 + 1.5 * IQR].
+            - **Isolation Forest:** A machine learning model is used for anomaly detection.
+            - Results may vary slightly between methods due to different assumptions about data distribution.
         """
         numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
         if numeric_data.empty:
             raise ValueError("No numeric columns available for outlier detection.")
 
-        # Calculate Z-scores
-        z_scores = (numeric_data - numeric_data.mean()) / numeric_data.std()
+        if method == 'zscore':
+            z_scores = (numeric_data - numeric_data.mean()) / numeric_data.std()
+            outlier_counts = (z_scores.abs() > threshold).sum()
+        elif method == 'iqr':
+            Q1 = numeric_data.quantile(0.25)
+            Q3 = numeric_data.quantile(0.75)
+            IQR = Q3 - Q1
+            outlier_counts = ((numeric_data < (Q1 - 1.5 * IQR)) | (numeric_data > (Q3 + 1.5 * IQR))).sum()
+        elif method == 'isolation_forest':
+            outlier_counts = pd.Series([
+                IsolationForest(contamination=0.05).fit_predict(numeric_data[col].values.reshape(-1, 1)).sum()
+                for col in numeric_data.columns
+            ], index=numeric_data.columns)
+        else:
+            raise ValueError("Invalid method. Choose from 'zscore', 'iqr', 'isolation_forest'.")
 
-        # Count outliers per column
-        outlier_counts = (z_scores.abs() > threshold).sum()
-
-        # Create a summary DataFrame
-        outlier_summary = pd.DataFrame({
-            'Column': outlier_counts.index,
-            'Outlier_Count': outlier_counts.values
-        }).sort_values(by='Outlier_Count', ascending=False).reset_index(drop=True)
-
-        return outlier_summary
+        return pd.DataFrame({'Column': outlier_counts.index, 'Outlier_Count': outlier_counts.values})
 
     def check_imbalance(self, column):
         """
