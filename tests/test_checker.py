@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from src.checker import DataQualityChecker
+from dataset_quality_checker import DataQualityChecker
 
 # Fixture to set up the DatasetQualityChecker instance
 @pytest.fixture

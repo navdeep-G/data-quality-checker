@@ -7,7 +7,6 @@ from collections import Counter
 from langdetect import detect
 from textblob import TextBlob
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.ensemble import IsolationForest
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import seaborn as sns
