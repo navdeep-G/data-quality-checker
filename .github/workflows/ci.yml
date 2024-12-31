@@ -28,10 +28,14 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements_test.txt
 
-      - name: Add src to PYTHONPATH
-        run: echo "PYTHONPATH=${PYTHONPATH}:$(pwd)/src" >> $GITHUB_ENV
+      - name: Install Package
+        run: |
+          pip install .
+
+      - name: Verify Installation
+        run: |
+          python -c "import dataset_quality_checker; print('Package imported successfully!')"
 
       - name: Run Tests
         run: |
-          pytest tests/test_checker.py --disable-warnings
-
+          pytest tests --disable-warnings
