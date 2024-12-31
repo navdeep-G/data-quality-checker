@@ -1,4 +1,4 @@
-name: CI - Data Quality Checker Tests
+name: CI - Data Quality Checker
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    name: Run Tests
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     steps:
