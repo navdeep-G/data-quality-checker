@@ -76,6 +76,7 @@ class DataQualityChecker:
         Raises:
             ValueError: If the column does not exist, is not numeric, or an invalid metric is specified.
         """
+        # Validate inputs
         if column not in self.data.columns:
             raise ValueError(f"Column '{column}' does not exist in the dataset.")
 
@@ -85,24 +86,28 @@ class DataQualityChecker:
         if metric not in ['mean', 'median', 'std']:
             raise ValueError("Invalid metric. Choose from 'mean', 'median', 'std'.")
 
+        # Define metric functions
+        metric_functions = {
+            'mean': np.mean,
+            'median': np.median,
+            'std': np.std
+        }
+
+        # Data preparation
         data = self.data[column].dropna().values
-        bootstrap_estimates = []
+        n_samples = len(data)
 
-        # Perform bootstrap sampling
+        # Bootstrap Sampling (Vectorized)
         np.random.seed(42)  # For reproducibility
-        for _ in range(n_iterations):
-            sample = np.random.choice(data, size=len(data), replace=True)
-            if metric == 'mean':
-                bootstrap_estimates.append(np.mean(sample))
-            elif metric == 'median':
-                bootstrap_estimates.append(np.median(sample))
-            elif metric == 'std':
-                bootstrap_estimates.append(np.std(sample))
+        bootstrap_samples = np.random.choice(data, size=(n_iterations, n_samples), replace=True)
+        bootstrap_estimates = np.apply_along_axis(metric_functions[metric], 1, bootstrap_samples)
 
-        # Calculate confidence interval
-        lower_bound = np.percentile(bootstrap_estimates, (1 - confidence_level) / 2 * 100)
-        upper_bound = np.percentile(bootstrap_estimates, (1 + confidence_level) / 2 * 100)
-        bootstrap_estimate = np.mean(bootstrap_estimates) if metric == 'mean' else np.median(bootstrap_estimates)
+        # Confidence Interval
+        lower_bound, upper_bound = np.percentile(
+            bootstrap_estimates,
+            [(1 - confidence_level) / 2 * 100, (1 + confidence_level) / 2 * 100]
+        )
+        bootstrap_estimate = metric_functions[metric](bootstrap_estimates)
 
         # Plot Bootstrap Distribution
         plt.figure(figsize=(10, 6))
