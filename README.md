@@ -73,3 +73,17 @@ Clone the repository and install the required dependencies:
 git clone https://github.com/navdeep-G/data-quality-checker.git
 cd dataset-quality-checker
 pip install -r requirements.txt
+```
+
+## Usage
+To use the dataset quality checker, import the DatasetQualityChecker class:
+```
+from src.checker import DatasetQualityChecker
+import pandas as pd
+df = pd.read_csv("path/to/your/data.csv")
+checker = DatasetQualityChecker(df)
+report = checker.generate_report()
+print(report)
+```
+## Contributing
+Please see [CONTRIBUTING.md](https://github.com/navdeep-G/data-quality-checker/blob/main/CONTRIBUTING.md) for guidelines.
