@@ -17,6 +17,7 @@ import gensim.downloader as api
 import pandas as pd
 import statsmodels.tsa.seasonal as sm
 from sklearn.ensemble import IsolationForest
+from scipy.stats import ttest_ind, chi2_contingency, f_oneway
 
 
 ### 1. DataQualityChecker Class (20 methods)
@@ -183,6 +184,9 @@ class DataQualityChecker:
             "upper_bound": upper_bound
         }
 
+    import pandas as pd
+    from scipy.stats import ttest_ind, chi2_contingency, f_oneway
+
     def perform_hypothesis_testing(self, test_type, column1, column2=None, group_column=None):
         """
         Perform hypothesis testing using t-tests, chi-squared tests, or ANOVA.
@@ -201,39 +205,44 @@ class DataQualityChecker:
         Raises:
             ValueError: If the input parameters or column data types are invalid.
         """
-        if test_type not in ['t-test', 'chi-squared', 'anova']:
-            raise ValueError("Invalid test_type. Choose from 't-test', 'chi-squared', or 'anova'.")
+        # Validate test_type
+        valid_tests = ['t-test', 'chi-squared', 'anova']
+        if test_type not in valid_tests:
+            raise ValueError(f"Invalid test_type. Choose from {', '.join(valid_tests)}.")
 
+        # Validate column1
         if column1 not in self.data.columns:
             raise ValueError(f"Column '{column1}' does not exist in the dataset.")
 
+        # Perform specific tests
         if test_type == 't-test':
+            # Validate column2
             if column2 is None or column2 not in self.data.columns:
-                raise ValueError(f"Column '{column2}' must be specified and exist in the dataset for a t-test.")
+                raise ValueError(f"Column '{column2}' must be specified and exist for a t-test.")
 
             # Perform independent t-test
-            from scipy.stats import ttest_ind
             group1 = self.data[column1].dropna()
             group2 = self.data[column2].dropna()
             test_statistic, p_value = ttest_ind(group1, group2, equal_var=False)
 
         elif test_type == 'chi-squared':
+            # Validate column2
             if column2 is None or column2 not in self.data.columns:
-                raise ValueError(
-                    f"Column '{column2}' must be specified and exist in the dataset for a chi-squared test.")
+                raise ValueError(f"Column '{column2}' must be specified and exist for a chi-squared test.")
 
             # Perform chi-squared test
-            from scipy.stats import chi2_contingency
             contingency_table = pd.crosstab(self.data[column1], self.data[column2])
             test_statistic, p_value, _, _ = chi2_contingency(contingency_table)
 
         elif test_type == 'anova':
+            # Validate group_column
             if group_column is None or group_column not in self.data.columns:
-                raise ValueError(f"Group column '{group_column}' must be specified and exist in the dataset for ANOVA.")
+                raise ValueError(f"Group column '{group_column}' must be specified and exist for ANOVA.")
 
             # Perform one-way ANOVA
-            from scipy.stats import f_oneway
             groups = [group[column1].dropna().values for _, group in self.data.groupby(group_column)]
+            if len(groups) < 2:
+                raise ValueError("ANOVA requires at least two groups for comparison.")
             test_statistic, p_value = f_oneway(*groups)
 
         return {
