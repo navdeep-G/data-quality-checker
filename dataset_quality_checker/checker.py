@@ -240,6 +240,7 @@ class DataQualityChecker:
             "test_statistic": test_statistic,
             "p_value": p_value
         }
+
     def check_uniform_distribution(self, column, p_value_threshold=0.05):
         """
         Test if a numeric or categorical column follows a uniform distribution.
@@ -416,6 +417,7 @@ class DataQualityChecker:
                 return False
 
         return self.data[column].apply(is_valid_number)
+
     def check_cross_column_dependency(self, column1, column2, rule):
         """
         Check for violations of cross-column dependency rules.
@@ -864,6 +866,7 @@ class DataQualityChecker:
         }
         return deviations
 
+
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
@@ -1242,6 +1245,7 @@ class TimeSeriesAnalyzer:
         z_scores = abs((self.data[column] - self.data[column].mean()) / self.data[column].std())
         return self.data[z_scores > z_threshold]
 
+
 ### 4. NLPAnalyzer Class (14 methods)
 class NLPAnalyzer:
     def __init__(self, data):
@@ -1601,4 +1605,3 @@ class NLPAnalyzer:
         """
         lengths = self.data[column].str.len()
         return self.data[(lengths < min_length) | (lengths > max_length)]
-
