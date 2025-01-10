@@ -250,6 +250,9 @@ class DataQualityChecker:
             "p_value": p_value
         }
 
+    from scipy.stats import kstest, chisquare
+    import pandas as pd
+
     def check_uniform_distribution(self, column, p_value_threshold=0.05):
         """
         Test if a numeric or categorical column follows a uniform distribution.
@@ -269,37 +272,32 @@ class DataQualityChecker:
         if column not in self.data.columns:
             raise ValueError(f"Column '{column}' does not exist in the dataset.")
 
-        # Check for numeric column
-        if pd.api.types.is_numeric_dtype(self.data[column]):
-            from scipy.stats import kstest
-            # Normalize data range to [0, 1]
-            col_data = self.data[column].dropna()
+        col_data = self.data[column].dropna()
+
+        if col_data.empty:
+            raise ValueError(f"Column '{column}' has no valid data.")
+
+        if pd.api.types.is_numeric_dtype(col_data):
+            # Normalize numeric data range to [0, 1]
             min_val, max_val = col_data.min(), col_data.max()
             scaled_data = (col_data - min_val) / (max_val - min_val)
 
             # Perform KS test against uniform distribution
-            ks_stat, p_value = kstest(scaled_data, 'uniform')
-            return {
-                "is_uniform": p_value > p_value_threshold,
-                "p_value": p_value
-            }
-
-        # Check for categorical column
-        elif pd.api.types.is_object_dtype(self.data[column]):
-            from scipy.stats import chisquare
-            # Calculate observed frequencies
-            col_data = self.data[column].dropna()
+            _, p_value = kstest(scaled_data, 'uniform')
+        elif pd.api.types.is_object_dtype(col_data):
+            # Calculate observed and expected frequencies for categorical data
             observed_freq = col_data.value_counts()
             expected_freq = [len(col_data) / len(observed_freq)] * len(observed_freq)
 
             # Perform chi-squared test
-            chi_stat, p_value = chisquare(observed_freq, expected_freq)
-            return {
-                "is_uniform": p_value > p_value_threshold,
-                "p_value": p_value
-            }
+            _, p_value = chisquare(observed_freq, expected_freq)
         else:
             raise ValueError(f"Column '{column}' is not numeric or categorical.")
+
+        return {
+            "is_uniform": p_value > p_value_threshold,
+            "p_value": p_value
+        }
 
     def detect_empty_columns(self):
         """
