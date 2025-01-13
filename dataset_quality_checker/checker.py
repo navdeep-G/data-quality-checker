@@ -17,7 +17,7 @@ import gensim.downloader as api
 import pandas as pd
 import statsmodels.tsa.seasonal as sm
 from sklearn.ensemble import IsolationForest
-from scipy.stats import ttest_ind, chi2_contingency, f_oneway
+from scipy.stats import ttest_ind, chi2_contingency, f_oneway, kstest, chisquare
 
 
 ### 1. DataQualityChecker Class (20 methods)
@@ -250,8 +250,7 @@ class DataQualityChecker:
             "p_value": p_value
         }
 
-    from scipy.stats import kstest, chisquare
-    import pandas as pd
+
 
     def check_uniform_distribution(self, column, p_value_threshold=0.05):
         """
