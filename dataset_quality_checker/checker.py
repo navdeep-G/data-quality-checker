@@ -57,247 +57,6 @@ class DataQualityChecker:
         }
         return report
 
-    def bootstrap_sampling_analysis(self, column, metric='mean', n_iterations=1000, confidence_level=0.95):
-        """
-        Use bootstrapping to estimate the variability of dataset metrics.
-
-        Args:
-            column (str): The numeric column to perform bootstrap sampling on.
-            metric (str): The metric to estimate. Options: 'mean', 'median', 'std'.
-            n_iterations (int): Number of bootstrap samples to draw.
-            confidence_level (float): Confidence level for the confidence interval.
-
-        Returns:
-            dict: A dictionary containing:
-                - 'bootstrap_estimate': The bootstrap estimate of the metric.
-                - 'lower_bound': Lower bound of the confidence interval.
-                - 'upper_bound': Upper bound of the confidence interval.
-                - 'bootstrap_distribution': Array of bootstrap estimates.
-
-        Raises:
-            ValueError: If the column does not exist, is not numeric, or an invalid metric is specified.
-        """
-        # Validate inputs
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-
-        if not pd.api.types.is_numeric_dtype(self.data[column]):
-            raise ValueError(f"Column '{column}' is not numeric.")
-
-        if metric not in ['mean', 'median', 'std']:
-            raise ValueError("Invalid metric. Choose from 'mean', 'median', 'std'.")
-
-        # Define metric functions
-        metric_functions = {
-            'mean': np.mean,
-            'median': np.median,
-            'std': np.std
-        }
-
-        # Data preparation
-        data = self.data[column].dropna().values
-        n_samples = len(data)
-
-        # Bootstrap Sampling (Vectorized)
-        np.random.seed(42)  # For reproducibility
-        bootstrap_samples = np.random.choice(data, size=(n_iterations, n_samples), replace=True)
-        bootstrap_estimates = np.apply_along_axis(metric_functions[metric], 1, bootstrap_samples)
-
-        # Confidence Interval
-        lower_bound, upper_bound = np.percentile(
-            bootstrap_estimates,
-            [(1 - confidence_level) / 2 * 100, (1 + confidence_level) / 2 * 100]
-        )
-        bootstrap_estimate = metric_functions[metric](bootstrap_estimates)
-
-        # Plot Bootstrap Distribution
-        plt.figure(figsize=(10, 6))
-        plt.hist(bootstrap_estimates, bins=30, alpha=0.7, edgecolor='black')
-        plt.axvline(lower_bound, color='green', linestyle='--', label='Lower Bound')
-        plt.axvline(upper_bound, color='red', linestyle='--', label='Upper Bound')
-        plt.axvline(bootstrap_estimate, color='blue', linestyle='--', label='Bootstrap Estimate')
-        plt.title(f'Bootstrap Sampling Distribution of {metric} ({confidence_level * 100:.0f}% CI)')
-        plt.xlabel(metric)
-        plt.ylabel('Frequency')
-        plt.legend()
-        plt.show()
-
-        return {
-            "bootstrap_estimate": bootstrap_estimate,
-            "lower_bound": lower_bound,
-            "upper_bound": upper_bound,
-            "bootstrap_distribution": bootstrap_estimates
-        }
-
-    def analyze_confidence_intervals(self, column, confidence_level=0.95):
-        """
-        Calculate and plot confidence intervals for a numeric column.
-
-        Args:
-            column (str): The numeric column to analyze.
-            confidence_level (float): The confidence level for the interval (default is 0.95).
-
-        Returns:
-            dict: A dictionary containing:
-                - 'mean': The mean of the column.
-                - 'lower_bound': Lower bound of the confidence interval.
-                - 'upper_bound': Upper bound of the confidence interval.
-
-        Raises:
-            ValueError: If the column is not numeric or does not exist.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-
-        if not pd.api.types.is_numeric_dtype(self.data[column]):
-            raise ValueError(f"Column '{column}' is not numeric.")
-
-        import scipy.stats as stats
-
-        # Drop missing values
-        data = self.data[column].dropna()
-
-        # Calculate sample mean and standard error
-        mean = data.mean()
-        sem = stats.sem(data)  # Standard error of the mean
-
-        # Calculate confidence interval
-        margin_of_error = stats.t.ppf((1 + confidence_level) / 2, len(data) - 1) * sem
-        lower_bound = mean - margin_of_error
-        upper_bound = mean + margin_of_error
-
-        # Plotting the confidence interval
-        plt.figure(figsize=(8, 4))
-        plt.axvline(mean, color='blue', linestyle='--', label='Mean')
-        plt.axvline(lower_bound, color='green', linestyle='--', label='Lower Bound')
-        plt.axvline(upper_bound, color='red', linestyle='--', label='Upper Bound')
-        plt.hist(data, bins=30, alpha=0.5, color='gray', edgecolor='black')
-        plt.title(f'Confidence Interval for {column} ({confidence_level * 100:.0f}% Confidence Level)')
-        plt.xlabel(column)
-        plt.ylabel('Frequency')
-        plt.legend()
-        plt.show()
-
-        return {
-            "mean": mean,
-            "lower_bound": lower_bound,
-            "upper_bound": upper_bound
-        }
-
-    import pandas as pd
-    from scipy.stats import ttest_ind, chi2_contingency, f_oneway
-
-    def perform_hypothesis_testing(self, test_type, column1, column2=None, group_column=None):
-        """
-        Perform hypothesis testing using t-tests, chi-squared tests, or ANOVA.
-
-        Args:
-            test_type (str): The type of test to perform. Options: 't-test', 'chi-squared', 'anova'.
-            column1 (str): The first column involved in the test (dependent or observed variable).
-            column2 (str, optional): The second column for t-tests or chi-squared tests.
-            group_column (str, optional): The grouping column for ANOVA.
-
-        Returns:
-            dict: A dictionary containing:
-                - 'test_statistic': The test statistic.
-                - 'p_value': The p-value of the test.
-
-        Raises:
-            ValueError: If the input parameters or column data types are invalid.
-        """
-        # Validate test_type
-        valid_tests = ['t-test', 'chi-squared', 'anova']
-        if test_type not in valid_tests:
-            raise ValueError(f"Invalid test_type. Choose from {', '.join(valid_tests)}.")
-
-        # Validate column1
-        if column1 not in self.data.columns:
-            raise ValueError(f"Column '{column1}' does not exist in the dataset.")
-
-        # Perform specific tests
-        if test_type == 't-test':
-            # Validate column2
-            if column2 is None or column2 not in self.data.columns:
-                raise ValueError(f"Column '{column2}' must be specified and exist for a t-test.")
-
-            # Perform independent t-test
-            group1 = self.data[column1].dropna()
-            group2 = self.data[column2].dropna()
-            test_statistic, p_value = ttest_ind(group1, group2, equal_var=False)
-
-        elif test_type == 'chi-squared':
-            # Validate column2
-            if column2 is None or column2 not in self.data.columns:
-                raise ValueError(f"Column '{column2}' must be specified and exist for a chi-squared test.")
-
-            # Perform chi-squared test
-            contingency_table = pd.crosstab(self.data[column1], self.data[column2])
-            test_statistic, p_value, _, _ = chi2_contingency(contingency_table)
-
-        elif test_type == 'anova':
-            # Validate group_column
-            if group_column is None or group_column not in self.data.columns:
-                raise ValueError(f"Group column '{group_column}' must be specified and exist for ANOVA.")
-
-            # Perform one-way ANOVA
-            groups = [group[column1].dropna().values for _, group in self.data.groupby(group_column)]
-            if len(groups) < 2:
-                raise ValueError("ANOVA requires at least two groups for comparison.")
-            test_statistic, p_value = f_oneway(*groups)
-
-        return {
-            "test_statistic": test_statistic,
-            "p_value": p_value
-        }
-
-
-
-    def check_uniform_distribution(self, column, p_value_threshold=0.05):
-        """
-        Test if a numeric or categorical column follows a uniform distribution.
-
-        Args:
-            column (str): The name of the column to test.
-            p_value_threshold (float): The p-value threshold for rejecting the null hypothesis.
-
-        Returns:
-            dict: A dictionary containing:
-                - 'is_uniform': True if the column is uniformly distributed, False otherwise.
-                - 'p_value': The p-value from the chi-squared or KS test.
-
-        Raises:
-            ValueError: If the column does not exist or is not numeric/categorical.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-
-        col_data = self.data[column].dropna()
-
-        if col_data.empty:
-            raise ValueError(f"Column '{column}' has no valid data.")
-
-        if pd.api.types.is_numeric_dtype(col_data):
-            # Normalize numeric data range to [0, 1]
-            min_val, max_val = col_data.min(), col_data.max()
-            scaled_data = (col_data - min_val) / (max_val - min_val)
-
-            # Perform KS test against uniform distribution
-            _, p_value = kstest(scaled_data, 'uniform')
-        elif pd.api.types.is_object_dtype(col_data):
-            # Calculate observed and expected frequencies for categorical data
-            observed_freq = col_data.value_counts()
-            expected_freq = [len(col_data) / len(observed_freq)] * len(observed_freq)
-
-            # Perform chi-squared test
-            _, p_value = chisquare(observed_freq, expected_freq)
-        else:
-            raise ValueError(f"Column '{column}' is not numeric or categorical.")
-
-        return {
-            "is_uniform": p_value > p_value_threshold,
-            "p_value": p_value
-        }
-
     def detect_empty_columns(self):
         """
         Identify columns in the dataset that are completely empty or contain only null values.
@@ -445,29 +204,6 @@ class DataQualityChecker:
             raise ValueError("The rule must be a callable function.")
         violations = self.data[~self.data.apply(lambda row: rule(row[column1], row[column2]), axis=1)]
         return violations
-
-    def check_multicollinearity(self, threshold=10):
-        """
-        Check for multicollinearity using Variance Inflation Factor (VIF).
-
-        Args:
-            threshold (float): The VIF threshold above which a feature is flagged.
-
-        Returns:
-            pd.DataFrame: A DataFrame with features and their VIF values exceeding the threshold.
-
-        Raises:
-            ValueError: If the dataset has no numeric columns.
-        """
-        numeric_data = self.data.select_dtypes(include=["float64", "int64"]).dropna()
-        if numeric_data.empty:
-            raise ValueError("No numeric columns available for multicollinearity check.")
-        vif_data = pd.DataFrame()
-        vif_data["feature"] = numeric_data.columns
-        vif_data["VIF"] = [
-            variance_inflation_factor(numeric_data.values, i) for i in range(numeric_data.shape[1])
-        ]
-        return vif_data[vif_data["VIF"] > threshold]
 
     def target_feature_relationship(self, target_column, feature_columns):
         """
@@ -723,29 +459,6 @@ class DataQualityChecker:
                 inconsistent[col] = unique_types
         return inconsistent
 
-    def check_correlation(self, threshold=0.9):
-        """
-        Identify highly correlated numeric features.
-
-        Args:
-            threshold (float): The correlation coefficient threshold.
-
-        Returns:
-            list: Pairs of columns with correlations exceeding the threshold.
-
-        Raises:
-            ValueError: If no numeric columns are available in the dataset.
-        """
-        numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
-        if numeric_data.empty:
-            raise ValueError("No numeric columns available for correlation check.")
-        correlation_matrix = numeric_data.corr()
-        correlated_features = [
-            (col1, col2) for col1 in correlation_matrix.columns for col2 in correlation_matrix.columns
-            if col1 != col2 and abs(correlation_matrix.loc[col1, col2]) > threshold
-        ]
-        return correlated_features
-
     def check_unique_values(self):
         """
         Identify columns with only one unique value.
@@ -920,6 +633,292 @@ class StatisticalAnalyzer:
     def low_variance_features(self, threshold=0.01):
         variances = self.data.var()
         return variances[variances < threshold].index.tolist()
+
+
+    def bootstrap_sampling_analysis(self, column, metric='mean', n_iterations=1000, confidence_level=0.95):
+        """
+        Use bootstrapping to estimate the variability of dataset metrics.
+
+        Args:
+            column (str): The numeric column to perform bootstrap sampling on.
+            metric (str): The metric to estimate. Options: 'mean', 'median', 'std'.
+            n_iterations (int): Number of bootstrap samples to draw.
+            confidence_level (float): Confidence level for the confidence interval.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'bootstrap_estimate': The bootstrap estimate of the metric.
+                - 'lower_bound': Lower bound of the confidence interval.
+                - 'upper_bound': Upper bound of the confidence interval.
+                - 'bootstrap_distribution': Array of bootstrap estimates.
+
+        Raises:
+            ValueError: If the column does not exist, is not numeric, or an invalid metric is specified.
+        """
+        # Validate inputs
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+
+        if metric not in ['mean', 'median', 'std']:
+            raise ValueError("Invalid metric. Choose from 'mean', 'median', 'std'.")
+
+        # Define metric functions
+        metric_functions = {
+            'mean': np.mean,
+            'median': np.median,
+            'std': np.std
+        }
+
+        # Data preparation
+        data = self.data[column].dropna().values
+        n_samples = len(data)
+
+        # Bootstrap Sampling (Vectorized)
+        np.random.seed(42)  # For reproducibility
+        bootstrap_samples = np.random.choice(data, size=(n_iterations, n_samples), replace=True)
+        bootstrap_estimates = np.apply_along_axis(metric_functions[metric], 1, bootstrap_samples)
+
+        # Confidence Interval
+        lower_bound, upper_bound = np.percentile(
+            bootstrap_estimates,
+            [(1 - confidence_level) / 2 * 100, (1 + confidence_level) / 2 * 100]
+        )
+        bootstrap_estimate = metric_functions[metric](bootstrap_estimates)
+
+        # Plot Bootstrap Distribution
+        plt.figure(figsize=(10, 6))
+        plt.hist(bootstrap_estimates, bins=30, alpha=0.7, edgecolor='black')
+        plt.axvline(lower_bound, color='green', linestyle='--', label='Lower Bound')
+        plt.axvline(upper_bound, color='red', linestyle='--', label='Upper Bound')
+        plt.axvline(bootstrap_estimate, color='blue', linestyle='--', label='Bootstrap Estimate')
+        plt.title(f'Bootstrap Sampling Distribution of {metric} ({confidence_level * 100:.0f}% CI)')
+        plt.xlabel(metric)
+        plt.ylabel('Frequency')
+        plt.legend()
+        plt.show()
+
+        return {
+            "bootstrap_estimate": bootstrap_estimate,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound,
+            "bootstrap_distribution": bootstrap_estimates
+        }
+
+    def analyze_confidence_intervals(self, column, confidence_level=0.95):
+        """
+        Calculate and plot confidence intervals for a numeric column.
+
+        Args:
+            column (str): The numeric column to analyze.
+            confidence_level (float): The confidence level for the interval (default is 0.95).
+
+        Returns:
+            dict: A dictionary containing:
+                - 'mean': The mean of the column.
+                - 'lower_bound': Lower bound of the confidence interval.
+                - 'upper_bound': Upper bound of the confidence interval.
+
+        Raises:
+            ValueError: If the column is not numeric or does not exist.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+
+        import scipy.stats as stats
+
+        # Drop missing values
+        data = self.data[column].dropna()
+
+        # Calculate sample mean and standard error
+        mean = data.mean()
+        sem = stats.sem(data)  # Standard error of the mean
+
+        # Calculate confidence interval
+        margin_of_error = stats.t.ppf((1 + confidence_level) / 2, len(data) - 1) * sem
+        lower_bound = mean - margin_of_error
+        upper_bound = mean + margin_of_error
+
+        # Plotting the confidence interval
+        plt.figure(figsize=(8, 4))
+        plt.axvline(mean, color='blue', linestyle='--', label='Mean')
+        plt.axvline(lower_bound, color='green', linestyle='--', label='Lower Bound')
+        plt.axvline(upper_bound, color='red', linestyle='--', label='Upper Bound')
+        plt.hist(data, bins=30, alpha=0.5, color='gray', edgecolor='black')
+        plt.title(f'Confidence Interval for {column} ({confidence_level * 100:.0f}% Confidence Level)')
+        plt.xlabel(column)
+        plt.ylabel('Frequency')
+        plt.legend()
+        plt.show()
+
+        return {
+            "mean": mean,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound
+        }
+
+    import pandas as pd
+    from scipy.stats import ttest_ind, chi2_contingency, f_oneway
+
+    def perform_hypothesis_testing(self, test_type, column1, column2=None, group_column=None):
+        """
+        Perform hypothesis testing using t-tests, chi-squared tests, or ANOVA.
+
+        Args:
+            test_type (str): The type of test to perform. Options: 't-test', 'chi-squared', 'anova'.
+            column1 (str): The first column involved in the test (dependent or observed variable).
+            column2 (str, optional): The second column for t-tests or chi-squared tests.
+            group_column (str, optional): The grouping column for ANOVA.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'test_statistic': The test statistic.
+                - 'p_value': The p-value of the test.
+
+        Raises:
+            ValueError: If the input parameters or column data types are invalid.
+        """
+        # Validate test_type
+        valid_tests = ['t-test', 'chi-squared', 'anova']
+        if test_type not in valid_tests:
+            raise ValueError(f"Invalid test_type. Choose from {', '.join(valid_tests)}.")
+
+        # Validate column1
+        if column1 not in self.data.columns:
+            raise ValueError(f"Column '{column1}' does not exist in the dataset.")
+
+        # Perform specific tests
+        if test_type == 't-test':
+            # Validate column2
+            if column2 is None or column2 not in self.data.columns:
+                raise ValueError(f"Column '{column2}' must be specified and exist for a t-test.")
+
+            # Perform independent t-test
+            group1 = self.data[column1].dropna()
+            group2 = self.data[column2].dropna()
+            test_statistic, p_value = ttest_ind(group1, group2, equal_var=False)
+
+        elif test_type == 'chi-squared':
+            # Validate column2
+            if column2 is None or column2 not in self.data.columns:
+                raise ValueError(f"Column '{column2}' must be specified and exist for a chi-squared test.")
+
+            # Perform chi-squared test
+            contingency_table = pd.crosstab(self.data[column1], self.data[column2])
+            test_statistic, p_value, _, _ = chi2_contingency(contingency_table)
+
+        elif test_type == 'anova':
+            # Validate group_column
+            if group_column is None or group_column not in self.data.columns:
+                raise ValueError(f"Group column '{group_column}' must be specified and exist for ANOVA.")
+
+            # Perform one-way ANOVA
+            groups = [group[column1].dropna().values for _, group in self.data.groupby(group_column)]
+            if len(groups) < 2:
+                raise ValueError("ANOVA requires at least two groups for comparison.")
+            test_statistic, p_value = f_oneway(*groups)
+
+        return {
+            "test_statistic": test_statistic,
+            "p_value": p_value
+        }
+
+    def check_uniform_distribution(self, column, p_value_threshold=0.05):
+        """
+        Test if a numeric or categorical column follows a uniform distribution.
+
+        Args:
+            column (str): The name of the column to test.
+            p_value_threshold (float): The p-value threshold for rejecting the null hypothesis.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'is_uniform': True if the column is uniformly distributed, False otherwise.
+                - 'p_value': The p-value from the chi-squared or KS test.
+
+        Raises:
+            ValueError: If the column does not exist or is not numeric/categorical.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        col_data = self.data[column].dropna()
+
+        if col_data.empty:
+            raise ValueError(f"Column '{column}' has no valid data.")
+
+        if pd.api.types.is_numeric_dtype(col_data):
+            # Normalize numeric data range to [0, 1]
+            min_val, max_val = col_data.min(), col_data.max()
+            scaled_data = (col_data - min_val) / (max_val - min_val)
+
+            # Perform KS test against uniform distribution
+            _, p_value = kstest(scaled_data, 'uniform')
+        elif pd.api.types.is_object_dtype(col_data):
+            # Calculate observed and expected frequencies for categorical data
+            observed_freq = col_data.value_counts()
+            expected_freq = [len(col_data) / len(observed_freq)] * len(observed_freq)
+
+            # Perform chi-squared test
+            _, p_value = chisquare(observed_freq, expected_freq)
+        else:
+            raise ValueError(f"Column '{column}' is not numeric or categorical.")
+
+        return {
+            "is_uniform": p_value > p_value_threshold,
+            "p_value": p_value
+        }
+
+    def check_correlation(self, threshold=0.9):
+        """
+        Identify highly correlated numeric features.
+
+        Args:
+            threshold (float): The correlation coefficient threshold.
+
+        Returns:
+            list: Pairs of columns with correlations exceeding the threshold.
+
+        Raises:
+            ValueError: If no numeric columns are available in the dataset.
+        """
+        numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
+        if numeric_data.empty:
+            raise ValueError("No numeric columns available for correlation check.")
+        correlation_matrix = numeric_data.corr()
+        correlated_features = [
+            (col1, col2) for col1 in correlation_matrix.columns for col2 in correlation_matrix.columns
+            if col1 != col2 and abs(correlation_matrix.loc[col1, col2]) > threshold
+        ]
+        return correlated_features
+
+    def check_multicollinearity(self, threshold=10):
+        """
+        Check for multicollinearity using Variance Inflation Factor (VIF).
+
+        Args:
+            threshold (float): The VIF threshold above which a feature is flagged.
+
+        Returns:
+            pd.DataFrame: A DataFrame with features and their VIF values exceeding the threshold.
+
+        Raises:
+            ValueError: If the dataset has no numeric columns.
+        """
+        numeric_data = self.data.select_dtypes(include=["float64", "int64"]).dropna()
+        if numeric_data.empty:
+            raise ValueError("No numeric columns available for multicollinearity check.")
+        vif_data = pd.DataFrame()
+        vif_data["feature"] = numeric_data.columns
+        vif_data["VIF"] = [
+            variance_inflation_factor(numeric_data.values, i) for i in range(numeric_data.shape[1])
+        ]
+        return vif_data[vif_data["VIF"] > threshold]
 
 
 ### 3. TimeSeriesAnalyzer Class (3 methods)
