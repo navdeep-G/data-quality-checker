@@ -29,7 +29,7 @@ def test_duplicates(dataset_checker):
     """
     Test to ensure no duplicate rows are detected in the dataset.
     """
-    duplicates = dataset_checker.check_duplicates()
+    duplicates = dataset_checker.check_duplicate_records()
     assert duplicates.shape[0] == 0, "Duplicate rows found in the dataset."
 
 # Test for outliers
