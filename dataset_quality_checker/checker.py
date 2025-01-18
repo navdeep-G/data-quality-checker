@@ -15,7 +15,6 @@ import json
 import phonenumbers
 import gensim.downloader as api
 import pandas as pd
-import statsmodels.tsa.seasonal as sm
 from sklearn.ensemble import IsolationForest
 from scipy.stats import ttest_ind, chi2_contingency, f_oneway, kstest, chisquare
 
@@ -584,6 +583,22 @@ class DataQualityChecker:
             for category in baseline_distribution
         }
         return deviations
+
+    def check_encoding_consistency(self, column):
+        """
+        Check if the encoding of a text column is consistent.
+
+        Args:
+            column (str): The column to check.
+
+        Returns:
+            bool: True if encoding is consistent, False otherwise.
+        """
+        try:
+            self.data[column].apply(lambda x: x.encode('utf-8').decode('utf-8'))
+            return True
+        except UnicodeDecodeError:
+            return False
 
 
 ### 2. StatisticalAnalyzer Class (6 methods)
