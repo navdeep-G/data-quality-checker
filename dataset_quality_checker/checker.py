@@ -51,7 +51,7 @@ class DataQualityChecker:
         """
         report = {
             "missing_values": self.check_missing_values(),
-            "duplicates": self.check_duplicates(),
+            "duplicates": self.check_duplicate_records(),
             "outliers": self.check_outliers(),
         }
         return report
@@ -332,7 +332,7 @@ class DataQualityChecker:
         missing = self.data.isnull().mean() * 100
         return missing[missing > 0]
 
-    def check_duplicates(self):
+    def check_duplicate_records(self):
         """
         Identify duplicate rows in the dataset.
 
@@ -600,6 +600,15 @@ class DataQualityChecker:
         except UnicodeDecodeError:
             return False
 
+    def check_duplicate_columns(self):
+        """
+        Identify duplicate columns in the dataset.
+
+        Returns:
+            list: A list of duplicate column names.
+        """
+        duplicates = self.data.columns[self.data.T.duplicated()]
+        return duplicates.tolist()
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
