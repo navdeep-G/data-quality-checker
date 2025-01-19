@@ -626,6 +626,21 @@ class DataQualityChecker:
         ]
         return sparse_columns
 
+    def validate_foreign_key(self, column, reference_column):
+        """
+        Validate foreign key constraints between two datasets.
+
+        Args:
+            column (str): The column in the current dataset to validate.
+            reference_column (pd.Series): The reference column from another dataset.
+
+        Returns:
+            pd.DataFrame: Rows in the dataset where the foreign key is invalid.
+        """
+        invalid_rows = self.data[~self.data[column].isin(reference_column)]
+        return invalid_rows
+
+
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
