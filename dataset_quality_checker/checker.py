@@ -610,6 +610,22 @@ class DataQualityChecker:
         duplicates = self.data.columns[self.data.T.duplicated()]
         return duplicates.tolist()
 
+    def identify_sparse_columns(self, threshold=0.9):
+        """
+        Identify columns with a high percentage of missing values or zeros.
+
+        Args:
+            threshold (float): The sparsity threshold (default: 90%).
+
+        Returns:
+            list: A list of sparse column names.
+        """
+        sparse_columns = [
+            col for col in self.data.columns
+            if (self.data[col].isnull().mean() + (self.data[col] == 0).mean()) > threshold
+        ]
+        return sparse_columns
+
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
