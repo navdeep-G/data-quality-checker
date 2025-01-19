@@ -670,6 +670,22 @@ class DataQualityChecker:
         unique_types = self.data[column].map(type).nunique()
         return unique_types > 1
 
+    def check_invalid_date_formats(self, column, date_format='%Y-%m-%d'):
+        """
+        Identify invalid date formats in a column.
+
+        Args:
+            column (str): The column to check.
+            date_format (str): The expected date format (default: '%Y-%m-%d').
+
+        Returns:
+            pd.DataFrame: Rows with invalid date formats.
+        """
+        invalid_dates = self.data[~self.data[column].apply(
+            lambda x: pd.to_datetime(x, format=date_format, errors='coerce').notnull()
+        )]
+        return invalid_dates
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
