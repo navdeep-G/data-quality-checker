@@ -657,6 +657,20 @@ class DataQualityChecker:
             ]
         return outliers
 
+    def detect_mixed_data_types(self, column):
+        """
+        Identify columns with mixed data types.
+
+        Args:
+            column (str): The column to analyze.
+
+        Returns:
+            bool: True if mixed data types are present, False otherwise.
+        """
+        unique_types = self.data[column].map(type).nunique()
+        return unique_types > 1
+
+
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
