@@ -640,6 +640,22 @@ class DataQualityChecker:
         invalid_rows = self.data[~self.data[column].isin(reference_column)]
         return invalid_rows
 
+    def detect_string_length_outliers(self, column, min_length=1, max_length=255):
+        """
+        Identify text entries in a column that are too short or too long.
+
+        Args:
+            column (str): The column to analyze.
+            min_length (int): Minimum acceptable string length.
+            max_length (int): Maximum acceptable string length.
+
+        Returns:
+            pd.DataFrame: Rows with outlier string lengths.
+        """
+        outliers = self.data[
+            (self.data[column].str.len() < min_length) | (self.data[column].str.len() > max_length)
+            ]
+        return outliers
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
