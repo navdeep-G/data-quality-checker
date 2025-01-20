@@ -686,6 +686,22 @@ class DataQualityChecker:
         )]
         return invalid_dates
 
+    def detect_redundant_columns(self, threshold=0.95):
+        """
+        Identify columns with high redundancy (similar data).
+
+        Args:
+            threshold (float): Correlation threshold for redundancy.
+
+        Returns:
+            list: Pairs of redundant columns.
+        """
+        corr_matrix = self.data.corr()
+        redundant_pairs = [
+            (col1, col2) for col1 in corr_matrix.columns for col2 in corr_matrix.columns
+            if col1 != col2 and abs(corr_matrix.loc[col1, col2]) > threshold
+        ]
+        return redundant_pairs
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
