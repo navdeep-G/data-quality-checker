@@ -703,6 +703,20 @@ class DataQualityChecker:
         ]
         return redundant_pairs
 
+    def validate_categorical_consistency(self, column, valid_categories):
+        """
+        Ensure all categories in a column are within a predefined set of valid categories.
+
+        Args:
+            column (str): The column to validate.
+            valid_categories (set): The set of valid categories.
+
+        Returns:
+            pd.Series: Rows with invalid categories.
+        """
+        invalid_rows = self.data[~self.data[column].isin(valid_categories)]
+        return invalid_rows
+
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
