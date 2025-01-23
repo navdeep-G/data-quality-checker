@@ -593,38 +593,31 @@ class DataQualityChecker:
         duplicates = self.data.columns[self.data.T.duplicated()]
         return duplicates.tolist()
 
-    def identify_sparse_columns(self, threshold=0.9):
+    def detect_sparse_and_empty_columns(self, sparsity_threshold=0.9):
         """
-        Identify columns with a high percentage of missing values or zeros.
+        Identify columns that are either completely empty or have a high percentage of missing/zero values.
 
         Args:
-            threshold (float): The sparsity threshold (default: 90%).
+            sparsity_threshold (float): The sparsity threshold (default: 90%).
 
         Returns:
-            list: A list of sparse column names.
-        """
-        sparse_columns = [
-            col for col in self.data.columns
-            if (self.data[col].isnull().mean() + (self.data[col] == 0).mean()) > threshold
-        ]
-        return sparse_columns
-
-    def detect_empty_columns(self):
-        """
-        Identify columns in the dataset that are completely empty or contain only null values.
-
-        Returns:
-            list: A list of column names that are completely empty.
-
-        Raises:
-            ValueError: If the dataset is empty.
+            dict: A dictionary containing:
+                - 'empty_columns': Columns that are completely empty.
+                - 'sparse_columns': Columns with sparsity above the given threshold.
         """
         if self.data.empty:
             raise ValueError("The dataset is empty.")
 
-        # Check for columns where all values are null
         empty_columns = [col for col in self.data.columns if self.data[col].isnull().all()]
-        return empty_columns
+        sparse_columns = [
+            col for col in self.data.columns
+            if (self.data[col].isnull().mean() + (self.data[col] == 0).mean()) > sparsity_threshold
+        ]
+
+        return {
+            "empty_columns": empty_columns,
+            "sparse_columns": sparse_columns,
+        }
 
     def validate_foreign_key(self, column, reference_column):
         """
