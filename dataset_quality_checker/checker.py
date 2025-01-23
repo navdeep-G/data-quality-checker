@@ -315,21 +315,6 @@ class DataQualityChecker:
         missing = self.data.isnull().mean() * 100
         return missing[missing > 0]
 
-    def check_duplicate_records(self):
-        """
-        Identify duplicate rows in the dataset.
-
-        Returns:
-            pd.DataFrame: A DataFrame containing duplicate rows.
-
-        Raises:
-            ValueError: If the dataset is empty.
-        """
-        if self.data.empty:
-            raise ValueError("Dataset is empty.")
-        duplicates = self.data[self.data.duplicated()]
-        return duplicates
-
     def check_outliers(self, method='zscore', threshold=3):
         """
         Detect outliers in numeric columns of the dataset using specified statistical or machine learning methods.
@@ -592,6 +577,21 @@ class DataQualityChecker:
         """
         duplicates = self.data.columns[self.data.T.duplicated()]
         return duplicates.tolist()
+
+    def check_duplicate_records(self):
+        """
+        Identify duplicate rows in the dataset.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing duplicate rows.
+
+        Raises:
+            ValueError: If the dataset is empty.
+        """
+        if self.data.empty:
+            raise ValueError("Dataset is empty.")
+        duplicates = self.data[self.data.duplicated()]
+        return duplicates
 
     def detect_sparse_and_empty_columns(self, sparsity_threshold=0.9):
         """
