@@ -674,35 +674,38 @@ class DataQualityChecker:
         )]
         return invalid_dates
 
-    def detect_redundant_columns(self, threshold=0.95):
+    def detect_column_redundancy(self, correlation_threshold=0.95):
         """
-        Identify columns with high redundancy (similar data).
+        Detect redundant columns using both correlation and exact equality.
 
         Args:
-            threshold (float): Correlation threshold for redundancy.
+            correlation_threshold (float): Threshold for detecting correlated redundancy (default: 0.95).
 
         Returns:
-            list: Pairs of redundant columns.
+            dict: A dictionary containing:
+                - 'correlated_columns': Pairs of columns with high correlation.
+                - 'exact_redundant_columns': Pairs of columns with identical values.
         """
+        if self.data.empty:
+            raise ValueError("The dataset is empty.")
+
+        # Detect correlated columns
         corr_matrix = self.data.corr()
-        redundant_pairs = [
+        correlated_columns = [
             (col1, col2) for col1 in corr_matrix.columns for col2 in corr_matrix.columns
-            if col1 != col2 and abs(corr_matrix.loc[col1, col2]) > threshold
+            if col1 != col2 and abs(corr_matrix.loc[col1, col2]) > correlation_threshold
         ]
-        return redundant_pairs
 
-    def detect_cross_column_redundancy(self, column1, column2):
-        """
-        Detect redundancy between two columns.
+        # Detect exactly redundant columns
+        exact_redundant_columns = [
+            (col1, col2) for col1 in self.data.columns for col2 in self.data.columns
+            if col1 != col2 and self.data[col1].equals(self.data[col2])
+        ]
 
-        Args:
-            column1 (str): The first column.
-            column2 (str): The second column.
-
-        Returns:
-            bool: True if columns are redundant, False otherwise.
-        """
-        return self.data[column1].equals(self.data[column2])
+        return {
+            "correlated_columns": correlated_columns,
+            "exact_redundant_columns": exact_redundant_columns,
+        }
 
     def validate_categorical_consistency(self, column, valid_categories):
         """
