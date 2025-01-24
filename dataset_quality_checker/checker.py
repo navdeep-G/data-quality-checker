@@ -736,6 +736,21 @@ class DataQualityChecker:
         missing_columns = [col for col in required_columns if col not in self.data.columns]
         return missing_columns
 
+    def check_column_duplicates(self, column):
+        """
+        Check for duplicate values within a specific column.
+
+        Args:
+            column (str): The name of the column to check.
+
+        Returns:
+            pd.DataFrame: Rows with duplicate values in the specified column.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        duplicates = self.data[self.data.duplicated(subset=[column])]
+        return duplicates
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
