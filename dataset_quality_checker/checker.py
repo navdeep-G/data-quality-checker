@@ -691,6 +691,19 @@ class DataQualityChecker:
         ]
         return redundant_pairs
 
+    def detect_cross_column_redundancy(self, column1, column2):
+        """
+        Detect redundancy between two columns.
+
+        Args:
+            column1 (str): The first column.
+            column2 (str): The second column.
+
+        Returns:
+            bool: True if columns are redundant, False otherwise.
+        """
+        return self.data[column1].equals(self.data[column2])
+
     def validate_categorical_consistency(self, column, valid_categories):
         """
         Ensure all categories in a column are within a predefined set of valid categories.
@@ -704,19 +717,6 @@ class DataQualityChecker:
         """
         invalid_rows = self.data[~self.data[column].isin(valid_categories)]
         return invalid_rows
-
-    def detect_cross_column_redundancy(self, column1, column2):
-        """
-        Detect redundancy between two columns.
-
-        Args:
-            column1 (str): The first column.
-            column2 (str): The second column.
-
-        Returns:
-            bool: True if columns are redundant, False otherwise.
-        """
-        return self.data[column1].equals(self.data[column2])
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
