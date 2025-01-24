@@ -721,6 +721,22 @@ class DataQualityChecker:
         invalid_rows = self.data[~self.data[column].isin(valid_categories)]
         return invalid_rows
 
+    def check_data_completeness(self, required_columns):
+        """
+        Check if the dataset contains all required columns.
+
+        Args:
+            required_columns (list): A list of column names that should be present in the dataset.
+
+        Returns:
+            list: Missing columns that are required but not in the dataset.
+        """
+        if not isinstance(required_columns, list):
+            raise ValueError("Required columns must be provided as a list.")
+        missing_columns = [col for col in required_columns if col not in self.data.columns]
+        return missing_columns
+
+
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
