@@ -770,6 +770,25 @@ class DataQualityChecker:
         inconsistent_rows = self.data[~self.data.apply(lambda row: rule(row[column1], row[column2]), axis=1)]
         return inconsistent_rows
 
+    def validate_numeric_precision(self, column, precision):
+        """
+        Validate that numeric values in a column do not exceed a specified precision.
+
+        Args:
+            column (str): The numeric column to validate.
+            precision (int): Maximum allowed number of decimal places.
+
+        Returns:
+            pd.DataFrame: Rows where numeric precision exceeds the specified limit.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+        invalid_rows = self.data[
+            self.data[column].apply(lambda x: len(str(x).split(".")[1]) if "." in str(x) else 0) > precision]
+        return invalid_rows
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
