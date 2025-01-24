@@ -751,6 +751,25 @@ class DataQualityChecker:
         duplicates = self.data[self.data.duplicated(subset=[column])]
         return duplicates
 
+    def check_consistency_across_columns(self, column1, column2, rule):
+        """
+        Check if values in one column are consistent with another column based on a rule.
+
+        Args:
+            column1 (str): The first column.
+            column2 (str): The second column.
+            rule (callable): A function to define consistency between two columns.
+
+        Returns:
+            pd.DataFrame: Rows where the consistency rule is violated.
+        """
+        if column1 not in self.data.columns or column2 not in self.data.columns:
+            raise ValueError("One or both specified columns do not exist in the dataset.")
+        if not callable(rule):
+            raise ValueError("Rule must be a callable function.")
+        inconsistent_rows = self.data[~self.data.apply(lambda row: rule(row[column1], row[column2]), axis=1)]
+        return inconsistent_rows
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
