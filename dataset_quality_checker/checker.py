@@ -568,30 +568,25 @@ class DataQualityChecker:
         except UnicodeDecodeError:
             return False
 
-    def check_duplicate_columns(self):
+    def detect_duplicates(self):
         """
-        Identify duplicate columns in the dataset.
+        Identify duplicate rows and columns in the dataset.
 
         Returns:
-            list: A list of duplicate column names.
-        """
-        duplicates = self.data.columns[self.data.T.duplicated()]
-        return duplicates.tolist()
-
-    def check_duplicate_records(self):
-        """
-        Identify duplicate rows in the dataset.
-
-        Returns:
-            pd.DataFrame: A DataFrame containing duplicate rows.
-
-        Raises:
-            ValueError: If the dataset is empty.
+            dict: A dictionary containing:
+                - 'duplicate_rows': A DataFrame with duplicate rows.
+                - 'duplicate_columns': A list of duplicate column names.
         """
         if self.data.empty:
-            raise ValueError("Dataset is empty.")
-        duplicates = self.data[self.data.duplicated()]
-        return duplicates
+            raise ValueError("The dataset is empty.")
+
+        duplicate_rows = self.data[self.data.duplicated()]
+        duplicate_columns = self.data.columns[self.data.T.duplicated()].tolist()
+
+        return {
+            "duplicate_rows": duplicate_rows,
+            "duplicate_columns": duplicate_columns,
+        }
 
     def detect_sparse_and_empty_columns(self, sparsity_threshold=0.9):
         """
