@@ -817,6 +817,22 @@ class DataQualityChecker:
                 missing_columns[partition] = missing
         return missing_columns
 
+    def detect_row_level_drift(self, reference_data, key_column):
+        """
+        Detect row-level drift by comparing current data with reference data.
+
+        Args:
+            reference_data (pd.DataFrame): The reference dataset.
+            key_column (str): The column representing unique keys.
+
+        Returns:
+            pd.DataFrame: Rows with mismatched data.
+        """
+        merged = self.data.merge(reference_data, on=key_column, suffixes=("_current", "_reference"))
+        drifted_rows = merged[~merged.filter(like="_current").equals(merged.filter(like="_reference"))]
+        return drifted_rows
+
+
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
