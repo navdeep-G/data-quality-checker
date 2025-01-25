@@ -789,6 +789,15 @@ class DataQualityChecker:
             self.data[column].apply(lambda x: len(str(x).split(".")[1]) if "." in str(x) else 0) > precision]
         return invalid_rows
 
+    def check_null_rows(self):
+        """
+        Identify rows where all columns are null.
+
+        Returns:
+            pd.DataFrame: Rows with all values as null.
+        """
+        null_rows = self.data[self.data.isnull().all(axis=1)]
+        return null_rows
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
