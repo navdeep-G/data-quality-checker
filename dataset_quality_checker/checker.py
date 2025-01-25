@@ -799,6 +799,24 @@ class DataQualityChecker:
         null_rows = self.data[self.data.isnull().all(axis=1)]
         return null_rows
 
+    def check_partition_column_completeness(self, partition_column, required_columns):
+        """
+        Check if all partitions contain data for required columns.
+
+        Args:
+            partition_column (str): The column defining partitions.
+            required_columns (list): List of required columns.
+
+        Returns:
+            dict: A dictionary with partitions as keys and missing columns as values.
+        """
+        missing_columns = {}
+        for partition, group in self.data.groupby(partition_column):
+            missing = [col for col in required_columns if col not in group.columns or group[col].isnull().all()]
+            if missing:
+                missing_columns[partition] = missing
+        return missing_columns
+
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
