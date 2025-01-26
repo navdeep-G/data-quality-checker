@@ -848,6 +848,27 @@ class DataQualityChecker:
         mismatched = aggregated[~aggregated.isin(self.data.to_dict("list")).all(axis=1)]
         return mismatched
 
+    def validate_data_types_across_partitions(self, partition_column):
+        """
+        Validate data types across partitions.
+
+        Args:
+            partition_column (str): The column defining partitions.
+
+        Returns:
+            dict: A dictionary with partitions as keys and inconsistent columns as values.
+        """
+        type_issues = {}
+        for partition, group in self.data.groupby(partition_column):
+            for col in group.columns:
+                types = group[col].map(type).unique()
+                if len(types) > 1:
+                    if partition not in type_issues:
+                        type_issues[partition] = []
+                    type_issues[partition].append(col)
+        return type_issues
+
+
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
