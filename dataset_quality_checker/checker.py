@@ -868,6 +868,20 @@ class DataQualityChecker:
                     type_issues[partition].append(col)
         return type_issues
 
+    def detect_skewed_data(self, skew_threshold=2):
+        """
+        Detect numeric columns with high skewness.
+
+        Args:
+            skew_threshold (float): Threshold for skewness (default: 2).
+
+        Returns:
+            list: Names of columns with skewness exceeding the threshold.
+        """
+        numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
+        skewed_columns = numeric_data.apply(lambda x: x.skew()).abs()
+        return skewed_columns[skewed_columns > skew_threshold].index.tolist()
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
