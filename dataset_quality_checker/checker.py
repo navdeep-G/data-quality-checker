@@ -832,6 +832,21 @@ class DataQualityChecker:
         drifted_rows = merged[~merged.filter(like="_current").equals(merged.filter(like="_reference"))]
         return drifted_rows
 
+    def validate_aggregation(self, raw_data, groupby_columns, aggregation_rules):
+        """
+        Validate the accuracy of aggregations against raw data.
+
+        Args:
+            raw_data (pd.DataFrame): The raw dataset to validate against.
+            groupby_columns (list): Columns to group by for aggregation.
+            aggregation_rules (dict): Dictionary defining aggregation logic (e.g., {col: "sum"}).
+
+        Returns:
+            pd.DataFrame: Aggregated rows that do not match.
+        """
+        aggregated = raw_data.groupby(groupby_columns).agg(aggregation_rules).reset_index()
+        mismatched = aggregated[~aggregated.isin(self.data.to_dict("list")).all(axis=1)]
+        return mismatched
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
