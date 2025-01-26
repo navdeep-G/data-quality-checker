@@ -17,6 +17,7 @@ import gensim.downloader as api
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 from scipy.stats import ttest_ind, chi2_contingency, f_oneway, kstest, chisquare
+from itertools import combinations
 
 
 ### 1. DataQualityChecker Class (20 methods)
@@ -897,6 +898,32 @@ class DataQualityChecker:
         missing_rows = merged[merged["_merge"] == "left_only"]
         duplicated_rows = merged[merged["_merge"] == "both"].duplicated(subset=join_keys, keep=False)
         return {"missing_rows": missing_rows, "duplicated_rows": duplicated_rows}
+
+    def detect_overlapping_categories(self, columns):
+        """
+        Detect overlapping categories in multiple categorical columns.
+
+        Args:
+            columns (list): List of column names to check for overlapping categories.
+
+        Returns:
+            dict: Overlapping categories between columns.
+                  Keys are tuples of column pairs, and values are lists of overlapping categories.
+        """
+        if not all(col in self.data.columns for col in columns):
+            raise ValueError("One or more specified columns do not exist in the dataset.")
+
+        # Get unique values from each column
+        category_sets = {col: set(self.data[col].dropna().unique()) for col in columns}
+        overlaps = {}
+
+        # Check for overlaps between all pairs of columns
+        for col1, col2 in combinations(columns, 2):
+            overlap = category_sets[col1].intersection(category_sets[col2])
+            if overlap:
+                overlaps[(col1, col2)] = list(overlap)
+
+        return overlaps
 
 
 ### 2. StatisticalAnalyzer Class (6 methods)
