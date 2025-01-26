@@ -882,6 +882,22 @@ class DataQualityChecker:
         skewed_columns = numeric_data.apply(lambda x: x.skew()).abs()
         return skewed_columns[skewed_columns > skew_threshold].index.tolist()
 
+    def check_data_integrity_after_joins(self, reference_data, join_keys):
+        """
+        Check for data loss or duplication after joins.
+
+        Args:
+            reference_data (pd.DataFrame): The dataset to compare after the join.
+            join_keys (list): The keys used for the join.
+
+        Returns:
+            dict: Rows missing or duplicated after the join.
+        """
+        merged = self.data.merge(reference_data, on=join_keys, how="outer", indicator=True)
+        missing_rows = merged[merged["_merge"] == "left_only"]
+        duplicated_rows = merged[merged["_merge"] == "both"].duplicated(subset=join_keys, keep=False)
+        return {"missing_rows": missing_rows, "duplicated_rows": duplicated_rows}
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
