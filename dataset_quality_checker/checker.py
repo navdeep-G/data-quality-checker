@@ -944,6 +944,22 @@ class DataQualityChecker:
             violations = pd.concat([violations, invalid_rows])
         return violations
 
+    def detect_multiclass_imbalance(self, column, imbalance_threshold=0.1):
+        """
+        Detect class imbalance in a multi-class categorical column.
+
+        Args:
+            column (str): The name of the column to analyze.
+            imbalance_threshold (float): Threshold for detecting imbalance (default: 10%).
+
+        Returns:
+            dict: Classes with percentages below the imbalance threshold.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        class_distribution = self.data[column].value_counts(normalize=True)
+        return class_distribution[class_distribution < imbalance_threshold].to_dict()
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
