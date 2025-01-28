@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 from dataset_quality_checker import DataQualityChecker
 
+
 # Fixture to set up the DatasetQualityChecker instance
 @pytest.fixture
 def dataset_checker():
@@ -16,6 +17,7 @@ def dataset_checker():
     })
     return DataQualityChecker(data)
 
+
 # Test for missing values
 def test_missing_values(dataset_checker):
     """
@@ -24,13 +26,15 @@ def test_missing_values(dataset_checker):
     missing_values = dataset_checker.check_missing_values()
     assert missing_values["A"] == 20.0, "Incorrect percentage of missing values for column 'A'."
 
+
 # Test for duplicates
 def test_duplicates(dataset_checker):
     """
     Test to ensure no duplicate rows are detected in the dataset.
     """
-    duplicates = dataset_checker.check_duplicate_records()
-    assert duplicates.shape[0] == 0, "Duplicate rows found in the dataset."
+    duplicates = dataset_checker.detect_duplicates()
+    assert len(duplicates['duplicate_columns']) == 0, "Duplicate rows found in the dataset."
+
 
 # Test for outliers
 def test_outliers(dataset_checker):
@@ -39,6 +43,7 @@ def test_outliers(dataset_checker):
     """
     outliers = dataset_checker.check_outliers()
     assert (outliers['Outlier_Count'] == 0).all(), "Some columns have outliers!"
+
 
 # Test for class imbalance
 def test_class_imbalance(dataset_checker):
