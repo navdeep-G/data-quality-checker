@@ -925,6 +925,25 @@ class DataQualityChecker:
 
         return overlaps
 
+    def validate_column_relationships(self, column_pairs, relationship_fn):
+        """
+        Validate logical relationships between column pairs.
+
+        Args:
+            column_pairs (list): List of tuples specifying column pairs (col1, col2).
+            relationship_fn (callable): A function defining the expected relationship.
+
+        Returns:
+            pd.DataFrame: Rows where the relationship is violated.
+        """
+        violations = pd.DataFrame()
+        for col1, col2 in column_pairs:
+            if col1 not in self.data.columns or col2 not in self.data.columns:
+                raise ValueError(f"Columns '{col1}' or '{col2}' do not exist.")
+            invalid_rows = self.data[~self.data.apply(lambda row: relationship_fn(row[col1], row[col2]), axis=1)]
+            violations = pd.concat([violations, invalid_rows])
+        return violations
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
