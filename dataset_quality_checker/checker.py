@@ -976,6 +976,23 @@ class DataQualityChecker:
         duplicates = lowercased.duplicated(keep=False)
         return self.data[column][duplicates].unique()
 
+    def detect_date_granularity_inconsistencies(self, column):
+        """
+        Detect inconsistent date granularity in a date column.
+
+        Args:
+            column (str): The column to check.
+
+        Returns:
+            pd.DataFrame: Rows with inconsistent date granularity.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        self.data[column] = pd.to_datetime(self.data[column], errors='coerce')
+        granularities = self.data[column].dropna().dt.strftime('%Y-%m-%d').str.split('-').str.len()
+        inconsistent_rows = self.data[granularities != granularities.mode()[0]]
+        return inconsistent_rows
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
