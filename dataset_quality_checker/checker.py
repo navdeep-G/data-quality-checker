@@ -960,6 +960,22 @@ class DataQualityChecker:
         class_distribution = self.data[column].value_counts(normalize=True)
         return class_distribution[class_distribution < imbalance_threshold].to_dict()
 
+    def detect_inconsistent_casing(self, column):
+        """
+        Detect inconsistent casing in a text column.
+
+        Args:
+            column (str): The column to check.
+
+        Returns:
+            pd.Series: Unique values with inconsistent casing.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        lowercased = self.data[column].str.lower().dropna()
+        duplicates = lowercased.duplicated(keep=False)
+        return self.data[column][duplicates].unique()
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
