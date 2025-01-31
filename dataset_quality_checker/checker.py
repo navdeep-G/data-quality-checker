@@ -993,6 +993,22 @@ class DataQualityChecker:
         inconsistent_rows = self.data[granularities != granularities.mode()[0]]
         return inconsistent_rows
 
+    def check_null_proportions_by_group(self, column, group_by):
+        """
+        Check for significant differences in null proportions across groups.
+
+        Args:
+            column (str): The column to analyze for nulls.
+            group_by (str): The column to group by.
+
+        Returns:
+            pd.Series: Proportions of nulls for each group.
+        """
+        if column not in self.data.columns or group_by not in self.data.columns:
+            raise ValueError(f"Columns '{column}' or '{group_by}' do not exist.")
+        null_proportions = self.data.groupby(group_by)[column].apply(lambda x: x.isnull().mean())
+        return null_proportions
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
