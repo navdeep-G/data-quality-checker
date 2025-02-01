@@ -1009,6 +1009,21 @@ class DataQualityChecker:
         null_proportions = self.data.groupby(group_by)[column].apply(lambda x: x.isnull().mean())
         return null_proportions
 
+    def detect_duplicates_in_subset(self, subset_columns):
+        """
+        Detect duplicate rows based on a subset of columns.
+
+        Args:
+            subset_columns (list): List of columns to check for duplicates.
+
+        Returns:
+            pd.DataFrame: Rows that are duplicates within the subset.
+        """
+        if not all(col in self.data.columns for col in subset_columns):
+            raise ValueError("One or more specified columns do not exist in the dataset.")
+        duplicates = self.data[self.data.duplicated(subset=subset_columns, keep=False)]
+        return duplicates
+
 
 ### 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
