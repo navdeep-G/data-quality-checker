@@ -18,6 +18,7 @@ import pandas as pd
 from sklearn.ensemble import IsolationForest
 from scipy.stats import ttest_ind, chi2_contingency, f_oneway, kstest, chisquare
 from itertools import combinations
+from scipy.stats import skew, kurtosis
 
 
 ### 1. DataQualityChecker Class (20 methods)
@@ -869,19 +870,33 @@ class DataQualityChecker:
                     type_issues[partition].append(col)
         return type_issues
 
-    def detect_skewed_data(self, skew_threshold=2):
+    def detect_skewness_kurtosis(self, column):
         """
-        Detect numeric columns with high skewness.
+        Detect skewness and kurtosis for a given numerical column.
 
         Args:
-            skew_threshold (float): Threshold for skewness (default: 2).
+            column (str): The column name to analyze.
 
         Returns:
-            list: Names of columns with skewness exceeding the threshold.
+            dict: A dictionary containing:
+                - 'skewness': Degree of asymmetry (positive = right-skewed, negative = left-skewed).
+                - 'kurtosis': Measure of tail heaviness (high = heavy tails, low = light tails).
+
+        Raises:
+            ValueError: If the column is not numeric.
         """
-        numeric_data = self.data.select_dtypes(include=['float64', 'int64'])
-        skewed_columns = numeric_data.apply(lambda x: x.skew()).abs()
-        return skewed_columns[skewed_columns > skew_threshold].index.tolist()
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+
+        col_data = self.data[column].dropna()
+
+        return {
+            "skewness": skew(col_data),
+            "kurtosis": kurtosis(col_data)
+        }
 
     def check_data_integrity_after_joins(self, reference_data, join_keys):
         """
