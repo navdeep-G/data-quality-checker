@@ -8,6 +8,7 @@ from langdetect import detect
 from textblob import TextBlob
 from sklearn.metrics.pairwise import cosine_similarity
 import statsmodels.api as sm
+from statsmodels.tsa.seasonal import seasonal_decompose
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
@@ -1568,8 +1569,6 @@ class TimeSeriesAnalyzer:
         if len(self.data) < 2:
             raise ValueError("Insufficient data for seasonal analysis. At least two timestamps are required.")
 
-        from statsmodels.tsa.seasonal import seasonal_decompose
-
         # Perform seasonal decomposition
         decomposition = seasonal_decompose(self.data[column], model=model, period={'D': 1, 'M': 12, 'Y': 365}[period])
 
@@ -1681,7 +1680,7 @@ class TimeSeriesAnalyzer:
         """
 
         series = self.data[column].dropna()
-        decomp = sm.seasonal_decompose(series, model='additive', period=frequency)
+        decomp = seasonal_decompose(series, model='additive', period=frequency)
         decomp.plot()
         plt.show()
         return decomp
