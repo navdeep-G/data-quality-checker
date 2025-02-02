@@ -870,34 +870,6 @@ class DataQualityChecker:
                     type_issues[partition].append(col)
         return type_issues
 
-    def detect_skewness_kurtosis(self, column):
-        """
-        Detect skewness and kurtosis for a given numerical column.
-
-        Args:
-            column (str): The column name to analyze.
-
-        Returns:
-            dict: A dictionary containing:
-                - 'skewness': Degree of asymmetry (positive = right-skewed, negative = left-skewed).
-                - 'kurtosis': Measure of tail heaviness (high = heavy tails, low = light tails).
-
-        Raises:
-            ValueError: If the column is not numeric.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-
-        if not pd.api.types.is_numeric_dtype(self.data[column]):
-            raise ValueError(f"Column '{column}' is not numeric.")
-
-        col_data = self.data[column].dropna()
-
-        return {
-            "skewness": skew(col_data),
-            "kurtosis": kurtosis(col_data)
-        }
-
     def check_data_integrity_after_joins(self, reference_data, join_keys):
         """
         Check for data loss or duplication after joins.
@@ -1374,6 +1346,33 @@ class StatisticalAnalyzer:
         ]
         return vif_data[vif_data["VIF"] > threshold]
 
+    def detect_skewness_kurtosis(self, column):
+        """
+        Detect skewness and kurtosis for a given numerical column.
+
+        Args:
+            column (str): The column name to analyze.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'skewness': Degree of asymmetry (positive = right-skewed, negative = left-skewed).
+                - 'kurtosis': Measure of tail heaviness (high = heavy tails, low = light tails).
+
+        Raises:
+            ValueError: If the column is not numeric.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+
+        col_data = self.data[column].dropna()
+
+        return {
+            "skewness": skew(col_data),
+            "kurtosis": kurtosis(col_data)
+        }
 
 ### 3. TimeSeriesAnalyzer Class (3 methods)
 class TimeSeriesAnalyzer:
