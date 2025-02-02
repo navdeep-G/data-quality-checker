@@ -1375,6 +1375,39 @@ class StatisticalAnalyzer:
             "kurtosis": kurtosis(col_data)
         }
 
+    from scipy.stats import shapiro, kstest
+
+    def check_normality(self, column):
+        """
+        Perform normality tests using Shapiro-Wilk and KS tests.
+
+        Args:
+            column (str): The column to analyze.
+
+        Returns:
+            dict: A dictionary with p-values for the normality tests.
+
+        Raises:
+            ValueError: If the column is not numeric.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+
+        col_data = self.data[column].dropna()
+
+        shapiro_p = shapiro(col_data)[1]  # Shapiro-Wilk test
+        ks_p = kstest(col_data, 'norm')[1]  # Kolmogorov-Smirnov test
+
+        return {
+            "shapiro_p_value": shapiro_p,
+            "ks_p_value": ks_p,
+            "normal": shapiro_p > 0.05 and ks_p > 0.05  # Higher p-value means likely normal
+        }
+
+
 ### 3. TimeSeriesAnalyzer Class (3 methods)
 class TimeSeriesAnalyzer:
     """
