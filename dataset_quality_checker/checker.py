@@ -1,16 +1,14 @@
 import numpy as np
 from scipy.stats import ks_2samp
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from collections import Counter
 from langdetect import detect
-from textblob import TextBlob
 from sklearn.metrics.pairwise import cosine_similarity
 from statsmodels.tsa.seasonal import seasonal_decompose
 import matplotlib.pyplot as plt
 import seaborn as sns
-import re
 import json
 import phonenumbers
 import gensim.downloader as api
@@ -20,8 +18,24 @@ from scipy.stats import ttest_ind, chi2_contingency, f_oneway, chisquare
 from itertools import combinations
 from scipy.stats import skew, kurtosis, shapiro, kstest
 from scipy.signal import find_peaks
+import ruptures as rpt
+import scipy.stats as stats
+from sklearn.metrics import mean_squared_error, mean_absolute_error, median_absolute_error, r2_score
+from statsmodels.tsa.stattools import adfuller
+from textblob import TextBlob
+from rake_nltk import Rake
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+import re
+import nltk
+import spacy
+from nltk.tokenize import sent_tokenize
+from nltk import word_tokenize, pos_tag, ne_chunk
+from nltk.tree import Tree
+from difflib import SequenceMatcher
 
-### 1. DataQualityChecker Class (20 methods)
+
+# 1. DataQualityChecker Class (20 methods)
 class DataQualityChecker:
     """
     A comprehensive class for assessing and addressing data quality issues.
@@ -53,7 +67,7 @@ class DataQualityChecker:
         """
         report = {
             "missing_values": self.check_missing_values(),
-            "duplicates": self.check_duplicate_records(),
+            "duplicates": self.detect_duplicates(),
             "outliers": self.check_outliers(),
         }
         return report
@@ -1012,7 +1026,7 @@ class DataQualityChecker:
         return duplicates
 
 
-### 2. StatisticalAnalyzer Class (6 methods)
+# 2. StatisticalAnalyzer Class (6 methods)
 class StatisticalAnalyzer:
     def __init__(self, data):
         self.data = data
@@ -1059,7 +1073,6 @@ class StatisticalAnalyzer:
     def low_variance_features(self, threshold=0.01):
         variances = self.data.var()
         return variances[variances < threshold].index.tolist()
-
 
     def bootstrap_sampling_analysis(self, column, metric='mean', n_iterations=1000, confidence_level=0.95):
         """
@@ -1156,8 +1169,6 @@ class StatisticalAnalyzer:
         if not pd.api.types.is_numeric_dtype(self.data[column]):
             raise ValueError(f"Column '{column}' is not numeric.")
 
-        import scipy.stats as stats
-
         # Drop missing values
         data = self.data[column].dropna()
 
@@ -1187,9 +1198,6 @@ class StatisticalAnalyzer:
             "lower_bound": lower_bound,
             "upper_bound": upper_bound
         }
-
-    import pandas as pd
-    from scipy.stats import ttest_ind, chi2_contingency, f_oneway
 
     def perform_hypothesis_testing(self, test_type, column1, column2=None, group_column=None):
         """
@@ -1374,8 +1382,6 @@ class StatisticalAnalyzer:
             "kurtosis": kurtosis(col_data)
         }
 
-    from scipy.stats import shapiro, kstest
-
     def check_normality(self, column):
         """
         Perform normality tests using Shapiro-Wilk and KS tests.
@@ -1469,7 +1475,7 @@ class StatisticalAnalyzer:
         }
 
 
-### 3. TimeSeriesAnalyzer Class (3 methods)
+# 3. TimeSeriesAnalyzer Class (3 methods)
 class TimeSeriesAnalyzer:
     """
     Analyzes time series data for gaps, seasonality, and rare events.
@@ -1527,8 +1533,6 @@ class TimeSeriesAnalyzer:
 
         if len(self.data) < 10:
             raise ValueError("Insufficient data for change point detection. At least 10 data points are required.")
-
-        import ruptures as rpt
 
         ts_data = self.data[column].values
 
@@ -1598,8 +1602,6 @@ class TimeSeriesAnalyzer:
 
         actual = valid_data[actual_column]
         predicted = valid_data[predicted_column]
-
-        from sklearn.metrics import mean_squared_error, mean_absolute_error, median_absolute_error, r2_score
 
         # Calculate metrics
         rmse = mean_squared_error(actual, predicted, squared=False)
@@ -1713,8 +1715,6 @@ class TimeSeriesAnalyzer:
         if not pd.api.types.is_numeric_dtype(self.data[column]):
             raise ValueError(f"Column '{column}' must be numeric for stationarity testing.")
 
-        from statsmodels.tsa.stattools import adfuller
-
         # Drop missing values
         ts_data = self.data[column].dropna()
 
@@ -1797,7 +1797,7 @@ class TimeSeriesAnalyzer:
         return self.data[z_scores > z_threshold]
 
 
-### 4. NLPAnalyzer Class (14 methods)
+# 4. NLPAnalyzer Class (14 methods)
 class NLPAnalyzer:
     def __init__(self, data):
         self.data = data
@@ -1857,8 +1857,6 @@ class NLPAnalyzer:
         if not pd.api.types.is_string_dtype(self.data[column]):
             raise ValueError(f"Column '{column}' must be of string type.")
 
-        from textblob import TextBlob
-
         return self.data[column].apply(lambda x: str(TextBlob(x).correct()) if pd.notnull(x) else x)
 
     def extract_keywords(self, column, top_n=10):
@@ -1876,8 +1874,6 @@ class NLPAnalyzer:
             raise ValueError(f"Column '{column}' does not exist in the dataset.")
         if not pd.api.types.is_string_dtype(self.data[column]):
             raise ValueError(f"Column '{column}' must be of string type.")
-
-        from rake_nltk import Rake
 
         rake = Rake()
 
@@ -1906,7 +1902,6 @@ class NLPAnalyzer:
         if not pd.api.types.is_string_dtype(self.data[column]):
             raise ValueError(f"Column '{column}' must be of string type.")
 
-        import spacy
         nlp = spacy.load('en_core_web_sm')
 
         entity_counts = {}
@@ -1935,9 +1930,6 @@ class NLPAnalyzer:
             raise ValueError(f"Column '{column}' does not exist in the dataset.")
         if not pd.api.types.is_string_dtype(self.data[column]):
             raise ValueError(f"Column '{column}' must be of string type.")
-
-        from sklearn.feature_extraction.text import CountVectorizer
-        from sklearn.decomposition import LatentDirichletAllocation
 
         text_data = self.data[column].dropna().astype(str).tolist()
         vectorizer = CountVectorizer(stop_words='english')
@@ -1977,8 +1969,6 @@ class NLPAnalyzer:
         if model not in ['spacy', 'nltk']:
             raise ValueError("Invalid model. Choose from 'spacy' or 'nltk'.")
 
-        import nltk
-        import re
         nltk.download('punkt', quiet=True)
         nltk.download('averaged_perceptron_tagger', quiet=True)
         nltk.download('maxent_ne_chunker', quiet=True)
@@ -1987,7 +1977,6 @@ class NLPAnalyzer:
         results = []
 
         if model == 'spacy':
-            import spacy
             nlp = spacy.load('en_core_web_sm')
 
             def extract_entities_spacy(text):
@@ -2003,8 +1992,6 @@ class NLPAnalyzer:
             results = self.data[column].apply(extract_entities_spacy)
 
         elif model == 'nltk':
-            from nltk import word_tokenize, pos_tag, ne_chunk
-            from nltk.tree import Tree
 
             def extract_entities_nltk(text):
                 if pd.isnull(text) or not text.strip():
@@ -2046,9 +2033,6 @@ class NLPAnalyzer:
         if not pd.api.types.is_string_dtype(self.data[column]):
             raise ValueError(f"Column '{column}' must be of string type.")
 
-        import nltk
-        from nltk.tokenize import word_tokenize, sent_tokenize
-
         nltk.download('punkt', quiet=True)  # Ensure tokenizers are downloaded
 
         if level == 'word':
@@ -2069,7 +2053,6 @@ class NLPAnalyzer:
         Returns:
             list of tuples: Pairs of similar text entries.
         """
-        from difflib import SequenceMatcher
 
         if column not in self.data.columns:
             raise ValueError(f"Column '{column}' does not exist in the dataset.")
