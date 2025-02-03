@@ -7,7 +7,6 @@ from collections import Counter
 from langdetect import detect
 from textblob import TextBlob
 from sklearn.metrics.pairwise import cosine_similarity
-import statsmodels.api as sm
 from statsmodels.tsa.seasonal import seasonal_decompose
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -19,8 +18,7 @@ import pandas as pd
 from sklearn.ensemble import IsolationForest
 from scipy.stats import ttest_ind, chi2_contingency, f_oneway, kstest, chisquare
 from itertools import combinations
-from scipy.stats import skew, kurtosis
-
+from scipy.stats import skew, kurtosis, shapiro, kstest
 
 ### 1. DataQualityChecker Class (20 methods)
 class DataQualityChecker:
