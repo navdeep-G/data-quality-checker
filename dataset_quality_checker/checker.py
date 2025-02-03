@@ -16,9 +16,10 @@ import phonenumbers
 import gensim.downloader as api
 import pandas as pd
 from sklearn.ensemble import IsolationForest
-from scipy.stats import ttest_ind, chi2_contingency, f_oneway, kstest, chisquare
+from scipy.stats import ttest_ind, chi2_contingency, f_oneway, chisquare
 from itertools import combinations
 from scipy.stats import skew, kurtosis, shapiro, kstest
+from scipy.signal import find_peaks
 
 ### 1. DataQualityChecker Class (20 methods)
 class DataQualityChecker:
@@ -1403,6 +1404,38 @@ class StatisticalAnalyzer:
             "shapiro_p_value": shapiro_p,
             "ks_p_value": ks_p,
             "normal": shapiro_p > 0.05 and ks_p > 0.05  # Higher p-value means likely normal
+        }
+
+    def detect_multimodal_distribution(self, column, min_distance=10):
+        """
+        Detect if a numerical column has a multimodal distribution.
+
+        Args:
+            column (str): The column name to analyze.
+            min_distance (int): Minimum distance between peaks.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'num_peaks': Number of peaks detected.
+                - 'peak_positions': Values at the peak positions.
+
+        Raises:
+            ValueError: If the column is not numeric.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+
+        col_data = self.data[column].dropna()
+        hist_values, bin_edges = np.histogram(col_data, bins=30)
+
+        peaks, _ = find_peaks(hist_values, distance=min_distance)
+
+        return {
+            "num_peaks": len(peaks),
+            "peak_positions": bin_edges[peaks].tolist()
         }
 
 
