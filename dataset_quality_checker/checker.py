@@ -1438,6 +1438,36 @@ class StatisticalAnalyzer:
             "peak_positions": bin_edges[peaks].tolist()
         }
 
+    def measure_data_spread(self, column):
+        """
+        Measure the spread of numerical data using IQR and variance.
+
+        Args:
+            column (str): The column name to analyze.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'variance': The variance of the column.
+                - 'iqr': The interquartile range (IQR).
+
+        Raises:
+            ValueError: If the column is not numeric.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' is not numeric.")
+
+        col_data = self.data[column].dropna()
+        q1, q3 = np.percentile(col_data, [25, 75])
+        iqr = q3 - q1
+
+        return {
+            "variance": np.var(col_data, ddof=1),
+            "iqr": iqr
+        }
+
 
 ### 3. TimeSeriesAnalyzer Class (3 methods)
 class TimeSeriesAnalyzer:
