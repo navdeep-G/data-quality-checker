@@ -33,6 +33,7 @@ from nltk.tokenize import sent_tokenize
 from nltk import word_tokenize, pos_tag, ne_chunk
 from nltk.tree import Tree
 from difflib import SequenceMatcher
+from scipy.stats import levene, bartlett
 
 
 # 1. DataQualityChecker Class (20 methods)
@@ -1517,6 +1518,46 @@ class StatisticalAnalyzer:
         psi = np.sum((baseline_hist - current_hist) * np.log(baseline_hist / current_hist))
 
         return psi
+
+    def check_homoscedasticity(self, column, group_column, test='levene'):
+        """
+        Checks if different groups have equal variance (homoscedasticity).
+
+        Args:
+            column (str): The numeric column to check.
+            group_column (str): The categorical column defining groups.
+            test (str): Statistical test to use ('levene' or 'bartlett').
+
+        Returns:
+            dict: Containing test statistic and p-value.
+
+        Raises:
+            ValueError: If the column is not numeric or group_column is not categorical.
+        """
+        if column not in self.data.columns or group_column not in self.data.columns:
+            raise ValueError(f"Columns '{column}' or '{group_column}' do not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        if not pd.api.types.is_object_dtype(self.data[group_column]) and not pd.api.types.is_categorical_dtype(
+                self.data[group_column]):
+            raise ValueError(f"Column '{group_column}' must be categorical.")
+
+        groups = [group[column].dropna() for _, group in self.data.groupby(group_column)]
+
+        if test == 'levene':
+            test_statistic, p_value = levene(*groups)
+        elif test == 'bartlett':
+            test_statistic, p_value = bartlett(*groups)
+        else:
+            raise ValueError("Invalid test. Choose 'levene' or 'bartlett'.")
+
+        return {
+            "test_statistic": test_statistic,
+            "p_value": p_value,
+            "equal_variance": p_value > 0.05
+        }
 
 
 # 3. TimeSeriesAnalyzer Class (3 methods)
