@@ -1474,6 +1474,50 @@ class StatisticalAnalyzer:
             "iqr": iqr
         }
 
+    def compute_population_stability_index(self, baseline_data, column, bins=10):
+        """
+        Compute Population Stability Index (PSI) to detect data drift.
+
+        Args:
+            baseline_data (pd.DataFrame): Reference dataset.
+            column (str): The column to analyze.
+            bins (int): Number of bins for frequency calculation.
+
+        Returns:
+            float: PSI value indicating drift (Higher PSI = More drift).
+
+        Raises:
+            ValueError: If the column is not numeric or does not exist.
+        """
+        if column not in self.data.columns or column not in baseline_data.columns:
+            raise ValueError(f"Column '{column}' must exist in both datasets.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]) or not pd.api.types.is_numeric_dtype(
+                baseline_data[column]):
+            raise ValueError(f"Column '{column}' must be numeric in both datasets.")
+
+        current_values = self.data[column].dropna()
+        baseline_values = baseline_data[column].dropna()
+
+        # Create bins
+        bin_edges = np.histogram_bin_edges(np.concatenate([current_values, baseline_values]), bins=bins)
+
+        # Calculate distributions
+        current_hist, _ = np.histogram(current_values, bins=bin_edges)
+        baseline_hist, _ = np.histogram(baseline_values, bins=bin_edges)
+
+        # Normalize
+        current_hist = current_hist / sum(current_hist)
+        baseline_hist = baseline_hist / sum(baseline_hist)
+
+        # Avoid division by zero
+        current_hist = np.where(current_hist == 0, 0.0001, current_hist)
+        baseline_hist = np.where(baseline_hist == 0, 0.0001, baseline_hist)
+
+        psi = np.sum((baseline_hist - current_hist) * np.log(baseline_hist / current_hist))
+
+        return psi
+
 
 # 3. TimeSeriesAnalyzer Class (3 methods)
 class TimeSeriesAnalyzer:
