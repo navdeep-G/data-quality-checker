@@ -34,7 +34,7 @@ from nltk import word_tokenize, pos_tag, ne_chunk
 from nltk.tree import Tree
 from difflib import SequenceMatcher
 from scipy.stats import levene, bartlett
-
+from scipy.stats import shapiro
 
 # 1. DataQualityChecker Class (20 methods)
 class DataQualityChecker:
@@ -1585,6 +1585,32 @@ class StatisticalAnalyzer:
             "monotonic_increasing": np.all(diffs >= 0),
             "monotonic_decreasing": np.all(diffs <= 0),
             "strictly_monotonic": np.all(diffs > 0) or np.all(diffs < 0)
+        }
+
+    def check_multivariate_normality(self, columns):
+        """
+        Check if a set of numerical columns follows a multivariate normal distribution.
+
+        Args:
+            columns (list): List of numeric columns.
+
+        Returns:
+            dict: Containing p-values from Shapiro-Wilk test for each column.
+
+        Raises:
+            ValueError: If the columns do not exist or are not numeric.
+        """
+        for column in columns:
+            if column not in self.data.columns:
+                raise ValueError(f"Column '{column}' does not exist.")
+            if not pd.api.types.is_numeric_dtype(self.data[column]):
+                raise ValueError(f"Column '{column}' must be numeric.")
+
+        results = {col: shapiro(self.data[col].dropna())[1] for col in columns}
+
+        return {
+            "p_values": results,
+            "multivariate_normal": all(p > 0.05 for p in results.values())
         }
 
 
