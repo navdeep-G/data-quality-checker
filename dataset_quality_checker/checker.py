@@ -1559,6 +1559,34 @@ class StatisticalAnalyzer:
             "equal_variance": p_value > 0.05
         }
 
+    def check_monotonicity(self, column):
+        """
+        Checks whether a numeric column follows a monotonic increasing or decreasing trend.
+
+        Args:
+            column (str): The numeric column to check.
+
+        Returns:
+            dict: Containing whether the trend is increasing, decreasing, or neither.
+
+        Raises:
+            ValueError: If the column is not numeric.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        col_data = self.data[column].dropna()
+        diffs = np.diff(col_data)
+
+        return {
+            "monotonic_increasing": np.all(diffs >= 0),
+            "monotonic_decreasing": np.all(diffs <= 0),
+            "strictly_monotonic": np.all(diffs > 0) or np.all(diffs < 0)
+        }
+
 
 # 3. TimeSeriesAnalyzer Class (3 methods)
 class TimeSeriesAnalyzer:
