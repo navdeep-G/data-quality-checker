@@ -1614,6 +1614,41 @@ class StatisticalAnalyzer:
             "multivariate_normal": all(p > 0.05 for p in results.values())
         }
 
+    def compute_cohens_d(self, column, group_column):
+        """
+        Computes Cohen’s D effect size between two groups.
+
+        Args:
+            column (str): The numeric column to analyze.
+            group_column (str): The categorical column defining groups.
+
+        Returns:
+            float: Cohen’s D effect size.
+
+        Raises:
+            ValueError: If the column is not numeric or group_column is not categorical.
+        """
+        if column not in self.data.columns or group_column not in self.data.columns:
+            raise ValueError(f"Columns '{column}' or '{group_column}' do not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        if not pd.api.types.is_object_dtype(self.data[group_column]) and not pd.api.types.is_categorical_dtype(
+                self.data[group_column]):
+            raise ValueError(f"Column '{group_column}' must be categorical.")
+
+        groups = self.data.groupby(group_column)[column].apply(list)
+
+        if len(groups) != 2:
+            raise ValueError("Cohen's D requires exactly two groups.")
+
+        group1, group2 = groups.values
+        mean1, mean2 = np.mean(group1), np.mean(group2)
+        pooled_std = np.sqrt((np.var(group1, ddof=1) + np.var(group2, ddof=1)) / 2)
+
+        return (mean1 - mean2) / pooled_std
+
 
 # 3. TimeSeriesAnalyzer Class (3 methods)
 class TimeSeriesAnalyzer:
