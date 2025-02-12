@@ -36,6 +36,8 @@ from nltk.tree import Tree
 from difflib import SequenceMatcher
 from scipy.stats import levene, bartlett
 from scipy.stats import shapiro
+from sklearn.feature_selection import mutual_info_classif
+
 
 # 1. DataQualityChecker Class (20 methods)
 class DataQualityChecker:
@@ -1648,6 +1650,32 @@ class StatisticalAnalyzer:
         pooled_std = np.sqrt((np.var(group1, ddof=1) + np.var(group2, ddof=1)) / 2)
 
         return (mean1 - mean2) / pooled_std
+
+    def compute_mutual_information(self, column, target_column):
+        """
+        Compute mutual information between a feature and target.
+
+        Args:
+            column (str): The independent variable.
+            target_column (str): The dependent (target) variable.
+
+        Returns:
+            float: Mutual information score.
+
+        Raises:
+            ValueError: If columns do not exist or are not categorical.
+        """
+        if column not in self.data.columns or target_column not in self.data.columns:
+            raise ValueError(f"Columns '{column}' or '{target_column}' do not exist.")
+
+        if not pd.api.types.is_object_dtype(self.data[column]) and not pd.api.types.is_categorical_dtype(
+                self.data[column]):
+            raise ValueError(f"Column '{column}' must be categorical.")
+
+        X = self.data[column].astype("category").cat.codes.values.reshape(-1, 1)
+        y = self.data[target_column]
+
+        return mutual_info_classif(X, y)[0]
 
 
 # 3. TimeSeriesAnalyzer Class (3 methods)
