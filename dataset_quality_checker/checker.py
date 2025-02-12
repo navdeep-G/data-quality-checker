@@ -7,6 +7,7 @@ from collections import Counter
 from langdetect import detect
 from sklearn.metrics.pairwise import cosine_similarity
 from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.stattools import acf
 import matplotlib.pyplot as plt
 import seaborn as sns
 import json
@@ -1934,6 +1935,32 @@ class TimeSeriesAnalyzer:
 
         z_scores = abs((self.data[column] - self.data[column].mean()) / self.data[column].std())
         return self.data[z_scores > z_threshold]
+
+    def check_serial_correlation(self, column, lags=10):
+        """
+        Tests for autocorrelation in a time series.
+
+        Args:
+            column (str): The time series column.
+            lags (int): Number of lag observations to check.
+
+        Returns:
+            dict: Autocorrelation values for specified lags.
+
+        Raises:
+            ValueError: If the column does not exist or is not numeric.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        col_data = self.data[column].dropna()
+
+        return {
+            "autocorrelation": acf(col_data, nlags=lags).tolist()
+        }
 
 
 # 4. NLPAnalyzer Class (14 methods)
