@@ -38,6 +38,7 @@ from scipy.stats import levene, bartlett
 from scipy.stats import shapiro
 from sklearn.feature_selection import mutual_info_classif
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 
 # 1. DataQualityChecker Class (20 methods)
@@ -2057,6 +2058,50 @@ class TimeSeriesAnalyzer:
 
         plt.tight_layout()
         plt.show()
+
+    def holt_winters_forecast(self, column, timestamp_column, periods=12, seasonal='add', trend='add'):
+        """
+        Forecasts time series using Holt-Winters Exponential Smoothing.
+
+        Args:
+            column (str): The time-series column.
+            timestamp_column (str): The timestamp column.
+            periods (int): Number of future periods to forecast.
+            seasonal (str): Seasonal component ('add' or 'mul').
+            trend (str): Trend component ('add' or 'mul').
+
+        Returns:
+            pd.DataFrame: A DataFrame containing actual and forecasted values.
+
+        Raises:
+            ValueError: If columns do not exist or contain invalid data.
+        """
+        if column not in self.data.columns or timestamp_column not in self.data.columns:
+            raise ValueError(f"Columns '{column}' or '{timestamp_column}' do not exist.")
+
+        self.data[timestamp_column] = pd.to_datetime(self.data[timestamp_column])
+        self.data.set_index(timestamp_column, inplace=True)
+        self.data.sort_index(inplace=True)
+
+        ts_data = self.data[column].dropna()
+
+        model = ExponentialSmoothing(ts_data, trend=trend, seasonal=seasonal, seasonal_periods=periods)
+        fit = model.fit()
+
+        forecast_index = pd.date_range(start=ts_data.index[-1], periods=periods, freq='M')
+        forecast_values = fit.forecast(periods)
+
+        # Plot forecast
+        plt.figure(figsize=(12, 6))
+        plt.plot(ts_data.index, ts_data, label="Actual", color='blue')
+        plt.plot(forecast_index, forecast_values, label="Forecast", color='red', linestyle='dashed')
+        plt.title(f"Holt-Winters Forecast for {column}")
+        plt.xlabel("Time")
+        plt.ylabel(column)
+        plt.legend()
+        plt.show()
+
+        return pd.DataFrame({"Timestamp": forecast_index, "Forecast": forecast_values})
 
 
 # 4. NLPAnalyzer Class (14 methods)
