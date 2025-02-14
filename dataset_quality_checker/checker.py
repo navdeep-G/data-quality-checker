@@ -37,6 +37,7 @@ from difflib import SequenceMatcher
 from scipy.stats import levene, bartlett
 from scipy.stats import shapiro
 from sklearn.feature_selection import mutual_info_classif
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
 
 # 1. DataQualityChecker Class (20 methods)
@@ -2024,6 +2025,38 @@ class TimeSeriesAnalyzer:
         return {
             "autocorrelation": acf(col_data, nlags=lags).tolist()
         }
+
+    def identify_seasonality(self, column, lags=50):
+        """
+        Identifies seasonality in time series using ACF (Autocorrelation Function) and PACF (Partial Autocorrelation Function).
+
+        Args:
+            column (str): The time-series column.
+            lags (int): Number of lags to consider for seasonality.
+
+        Returns:
+            None: Displays ACF and PACF plots.
+
+        Raises:
+            ValueError: If the column is not numeric or does not exist.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        col_data = self.data[column].dropna()
+
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        plot_acf(col_data, lags=lags, ax=axes[0])
+        plot_pacf(col_data, lags=lags, ax=axes[1])
+
+        axes[0].set_title(f"Autocorrelation Function (ACF) for {column}")
+        axes[1].set_title(f"Partial Autocorrelation Function (PACF) for {column}")
+
+        plt.tight_layout()
+        plt.show()
 
 
 # 4. NLPAnalyzer Class (14 methods)
