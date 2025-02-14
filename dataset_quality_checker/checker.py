@@ -1984,22 +1984,31 @@ class TimeSeriesAnalyzer:
         plt.show()
         return decomp
 
-    def check_rare_events(self, column, z_threshold=3):
+    def detect_anomalies_zscore(self, column, threshold=3.0):
         """
-        Identifies and returns rows in the data where the absolute value of the z-score
-        in the specified column exceeds the given threshold.
+        Detects anomalies in time series using Z-score method.
 
         Args:
-            column (str): The name of the column containing the data for calculating z-scores.
-            z_threshold (float, optional): The threshold for identifying rare events (defaults to 3).
+            column (str): The numeric column containing time-series data.
+            threshold (float): The Z-score threshold for anomaly detection.
 
         Returns:
-            pd.DataFrame: A DataFrame containing only the rows where the absolute value of
-                the z-score in the specified column exceeds the threshold.
-        """
+            pd.DataFrame: Data points flagged as anomalies.
 
-        z_scores = abs((self.data[column] - self.data[column].mean()) / self.data[column].std())
-        return self.data[z_scores > z_threshold]
+        Raises:
+            ValueError: If column does not exist or is not numeric.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        col_data = self.data[column].dropna()
+        z_scores = (col_data - col_data.mean()) / col_data.std()
+        anomalies = self.data.loc[z_scores.abs() > threshold]
+
+        return anomalies
 
     def check_serial_correlation(self, column, lags=10):
         """
