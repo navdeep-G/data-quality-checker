@@ -2112,6 +2112,32 @@ class TimeSeriesAnalyzer:
 
         return pd.DataFrame({"Timestamp": forecast_index, "Forecast": forecast_values})
 
+    def detect_spikes(self, column, threshold=2.0):
+        """
+        Detects sudden spikes or dips in time-series data.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+            threshold (float): Multiple of standard deviation to flag as a spike.
+
+        Returns:
+            pd.DataFrame: Rows where a spike or dip occurs.
+
+        Raises:
+            ValueError: If column does not exist or is not numeric.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        col_data = self.data[column].dropna()
+        diffs = col_data.diff().abs()
+
+        spikes = self.data.loc[diffs > threshold * diffs.std()]
+        return spikes
+
 
 # 4. NLPAnalyzer Class (14 methods)
 class NLPAnalyzer:
