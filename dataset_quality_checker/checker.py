@@ -1,3 +1,4 @@
+import holidays
 import numpy as np
 from scipy.stats import ks_2samp
 from statsmodels.stats.outliers_influence import variance_inflation_factor
@@ -2176,6 +2177,39 @@ class TimeSeriesAnalyzer:
         plt.show()
 
         return dict(zip(lags, correlations))
+
+    def check_weekend_holiday_effects(self, column, timestamp_column, country='US'):
+        """
+        Analyzes whether weekends or holidays impact the time-series values.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+            timestamp_column (str): The timestamp column.
+            country (str): Country code for holidays (default: 'US').
+
+        Returns:
+            dict: Average values for weekdays, weekends, and holidays.
+
+        Raises:
+            ValueError: If columns do not exist or are invalid.
+        """
+        if column not in self.data.columns or timestamp_column not in self.data.columns:
+            raise ValueError(f"Columns '{column}' or '{timestamp_column}' do not exist.")
+
+        self.data[timestamp_column] = pd.to_datetime(self.data[timestamp_column])
+        self.data['day_of_week'] = self.data[timestamp_column].dt.dayofweek
+        self.data['is_weekend'] = self.data['day_of_week'] >= 5
+
+        country_holidays = holidays.country_holidays(country)
+        self.data['is_holiday'] = self.data[timestamp_column].apply(lambda x: x in country_holidays)
+
+        averages = {
+            "weekday_avg": self.data.loc[~self.data['is_weekend'], column].mean(),
+            "weekend_avg": self.data.loc[self.data['is_weekend'], column].mean(),
+            "holiday_avg": self.data.loc[self.data['is_holiday'], column].mean(),
+        }
+
+        return averages
 
 
 # 4. NLPAnalyzer Class (14 methods)
