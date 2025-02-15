@@ -2138,6 +2138,45 @@ class TimeSeriesAnalyzer:
         spikes = self.data.loc[diffs > threshold * diffs.std()]
         return spikes
 
+    def cross_correlation(self, column1, column2, max_lag=10):
+        """
+        Computes cross-correlation between two time series columns.
+
+        Args:
+            column1 (str): First time series column.
+            column2 (str): Second time series column.
+            max_lag (int): Maximum lag to compute correlation.
+
+        Returns:
+            dict: Cross-correlation values at different lags.
+
+        Raises:
+            ValueError: If columns do not exist or are not numeric.
+        """
+        if column1 not in self.data.columns or column2 not in self.data.columns:
+            raise ValueError(f"Columns '{column1}' and '{column2}' must exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column1]) or not pd.api.types.is_numeric_dtype(
+                self.data[column2]):
+            raise ValueError(f"Both columns must be numeric.")
+
+        col1_data = self.data[column1].dropna()
+        col2_data = self.data[column2].dropna()
+
+        lags = range(-max_lag, max_lag + 1)
+        correlations = [col1_data.corr(col2_data.shift(lag)) for lag in lags]
+
+        plt.figure(figsize=(10, 5))
+        plt.stem(lags, correlations, use_line_collection=True)
+        plt.xlabel("Lag")
+        plt.ylabel("Cross-Correlation")
+        plt.title(f"Cross-Correlation between {column1} and {column2}")
+        plt.axhline(y=0, color='black', linestyle='--')
+        plt.grid(True)
+        plt.show()
+
+        return dict(zip(lags, correlations))
+
 
 # 4. NLPAnalyzer Class (14 methods)
 class NLPAnalyzer:
