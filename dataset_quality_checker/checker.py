@@ -1774,6 +1774,29 @@ class TimeSeriesAnalyzer:
             "method": method
         }
 
+    def exponential_moving_average(self, column, span=10):
+        """
+        Computes the Exponential Moving Average (EMA) to smooth time-series data.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+            span (int): The span for the EMA.
+
+        Returns:
+            pd.Series: The computed EMA values.
+
+        Raises:
+            ValueError: If column is missing or invalid.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        ema = self.data[column].ewm(span=span, adjust=False).mean()
+        return ema
+
     def forecast_accuracy_metrics(self, actual_column, predicted_column):
         """
         Evaluate forecast accuracy metrics for predictive models.
