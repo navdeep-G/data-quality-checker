@@ -1797,6 +1797,33 @@ class TimeSeriesAnalyzer:
         ema = self.data[column].ewm(span=span, adjust=False).mean()
         return ema
 
+    def seasonal_strength(self, column, frequency):
+        """
+        Measures the strength of seasonality in time series.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+            frequency (int): Seasonal period (e.g., 12 for monthly data).
+
+        Returns:
+            float: Strength of seasonality (0 = no seasonality, 1 = strong seasonality).
+
+        Raises:
+            ValueError: If column is missing or invalid.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        ts_data = self.data[column].dropna()
+        moving_avg = ts_data.rolling(window=frequency, center=True).mean()
+        residuals = ts_data - moving_avg
+        strength = 1 - (residuals.var() / ts_data.var())
+
+        return max(0, strength)
+
     def forecast_accuracy_metrics(self, actual_column, predicted_column):
         """
         Evaluate forecast accuracy metrics for predictive models.
