@@ -1824,6 +1824,29 @@ class TimeSeriesAnalyzer:
 
         return max(0, strength)
 
+    def rolling_window_forecast(self, column, window=12):
+        """
+        Forecasts future values using a rolling average.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+            window (int): The rolling window size.
+
+        Returns:
+            pd.Series: Forecasted values.
+
+        Raises:
+            ValueError: If column is missing or invalid.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        forecast = self.data[column].rolling(window=window).mean().shift(1)
+        return forecast
+
     def forecast_accuracy_metrics(self, actual_column, predicted_column):
         """
         Evaluate forecast accuracy metrics for predictive models.
