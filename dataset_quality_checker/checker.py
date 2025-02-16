@@ -40,6 +40,7 @@ from scipy.stats import shapiro
 from sklearn.feature_selection import mutual_info_classif
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
+import ruptures as rpt
 
 
 # 1. DataQualityChecker Class (20 methods)
@@ -2210,6 +2211,41 @@ class TimeSeriesAnalyzer:
         }
 
         return averages
+
+    def detect_structural_breaks(self, column, model="l2", penalty=5):
+        """
+        Detects structural breaks (abrupt changes in trend) in a time series.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+            model (str): Model for detecting change points ('l1', 'l2', 'rbf').
+            penalty (int): Penalty value for detecting change points.
+
+        Returns:
+            list: Indices of detected structural breaks.
+
+        Raises:
+            ValueError: If column is missing or invalid.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        ts_data = self.data[column].dropna().values
+        algo = rpt.Pelt(model=model).fit(ts_data)
+        change_points = algo.predict(pen=penalty)
+
+        plt.figure(figsize=(12, 6))
+        plt.plot(ts_data, label="Time-Series Data")
+        for cp in change_points[:-1]:
+            plt.axvline(cp, color='red', linestyle="--", label="Structural Break")
+        plt.title(f"Structural Breaks in {column}")
+        plt.legend()
+        plt.show()
+
+        return change_points
 
 
 # 4. NLPAnalyzer Class (14 methods)
