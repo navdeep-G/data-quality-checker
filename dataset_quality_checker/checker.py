@@ -41,6 +41,7 @@ from sklearn.feature_selection import mutual_info_classif
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import ruptures as rpt
+from scipy.fftpack import fft
 
 
 # 1. DataQualityChecker Class (20 methods)
@@ -1846,8 +1847,6 @@ class TimeSeriesAnalyzer:
 
         forecast = self.data[column].rolling(window=window).mean().shift(1)
         return forecast
-
-    from scipy.fftpack import fft
 
     def fourier_transform_analysis(self, column):
         """
