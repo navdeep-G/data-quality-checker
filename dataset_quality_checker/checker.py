@@ -1847,6 +1847,41 @@ class TimeSeriesAnalyzer:
         forecast = self.data[column].rolling(window=window).mean().shift(1)
         return forecast
 
+    from scipy.fftpack import fft
+
+    def fourier_transform_analysis(self, column):
+        """
+        Performs Fourier Transform to analyze dominant frequencies in time-series data.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+
+        Returns:
+            tuple: Frequencies and corresponding amplitudes.
+
+        Raises:
+            ValueError: If column is missing or invalid.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        ts_data = self.data[column].dropna().values
+        n = len(ts_data)
+        frequencies = np.fft.fftfreq(n)
+        amplitudes = np.abs(fft(ts_data))
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(frequencies[:n // 2], amplitudes[:n // 2])
+        plt.title(f"Fourier Transform of {column}")
+        plt.xlabel("Frequency")
+        plt.ylabel("Amplitude")
+        plt.show()
+
+        return frequencies[:n // 2], amplitudes[:n // 2]
+
     def forecast_accuracy_metrics(self, actual_column, predicted_column):
         """
         Evaluate forecast accuracy metrics for predictive models.
