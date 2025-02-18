@@ -7,6 +7,7 @@ from nltk.corpus import stopwords
 from collections import Counter
 from langdetect import detect
 from sklearn.metrics.pairwise import cosine_similarity
+from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
 import matplotlib.pyplot as plt
@@ -1904,8 +1905,6 @@ class TimeSeriesAnalyzer:
         missing_timestamps = set(complete_range) - set(self.data[timestamp_column])
 
         return sorted(missing_timestamps)
-
-    from statsmodels.tsa.ar_model import AutoReg
 
     def autoregressive_forecast(self, column, lags=3, steps=5):
         """
