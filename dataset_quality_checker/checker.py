@@ -1905,6 +1905,35 @@ class TimeSeriesAnalyzer:
 
         return sorted(missing_timestamps)
 
+    from statsmodels.tsa.ar_model import AutoReg
+
+    def autoregressive_forecast(self, column, lags=3, steps=5):
+        """
+        Forecasts time series using an Autoregressive (AR) model.
+
+        Args:
+            column (str): The numeric column containing time-series data.
+            lags (int): Number of lags for the AR model.
+            steps (int): Number of future steps to predict.
+
+        Returns:
+            pd.Series: Forecasted values.
+
+        Raises:
+            ValueError: If column is missing or invalid.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        if not pd.api.types.is_numeric_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be numeric.")
+
+        ts_data = self.data[column].dropna()
+        model = AutoReg(ts_data, lags=lags).fit()
+        forecast = model.predict(start=len(ts_data), end=len(ts_data) + steps - 1)
+
+        return forecast
+
     def forecast_accuracy_metrics(self, actual_column, predicted_column):
         """
         Evaluate forecast accuracy metrics for predictive models.
