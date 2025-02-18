@@ -1881,6 +1881,30 @@ class TimeSeriesAnalyzer:
 
         return frequencies[:n // 2], amplitudes[:n // 2]
 
+    def detect_missing_timestamps(self, timestamp_column, freq='D'):
+        """
+        Detects missing time intervals in a time-series dataset.
+
+        Args:
+            timestamp_column (str): The timestamp column.
+            freq (str): Frequency ('D' for daily, 'H' for hourly, etc.).
+
+        Returns:
+            list: Missing timestamps.
+
+        Raises:
+            ValueError: If column is missing or not a datetime.
+        """
+        if timestamp_column not in self.data.columns:
+            raise ValueError(f"Column '{timestamp_column}' does not exist.")
+
+        self.data[timestamp_column] = pd.to_datetime(self.data[timestamp_column])
+        complete_range = pd.date_range(start=self.data[timestamp_column].min(), end=self.data[timestamp_column].max(),
+                                       freq=freq)
+        missing_timestamps = set(complete_range) - set(self.data[timestamp_column])
+
+        return sorted(missing_timestamps)
+
     def forecast_accuracy_metrics(self, actual_column, predicted_column):
         """
         Evaluate forecast accuracy metrics for predictive models.
