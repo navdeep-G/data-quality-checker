@@ -19,9 +19,8 @@ import pandas as pd
 from sklearn.ensemble import IsolationForest
 from scipy.stats import ttest_ind, chi2_contingency, f_oneway, chisquare
 from itertools import combinations
-from scipy.stats import skew, kurtosis, shapiro, kstest
+from scipy.stats import skew, kurtosis, kstest
 from scipy.signal import find_peaks
-import ruptures as rpt
 import scipy.stats as stats
 from sklearn.metrics import mean_squared_error, mean_absolute_error, median_absolute_error, r2_score
 from statsmodels.tsa.stattools import adfuller
