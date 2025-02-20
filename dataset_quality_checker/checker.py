@@ -2749,3 +2749,32 @@ class NLPAnalyzer:
         """
         lengths = self.data[column].str.len()
         return self.data[(lengths < min_length) | (lengths > max_length)]
+
+    from textstat import flesch_reading_ease, smog_index, dale_chall_readability_score
+
+    def text_readability_score(self, column):
+        """
+        Compute readability scores for text data.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing readability metrics.
+
+        Raises:
+            ValueError: If column is missing or not string type.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        scores = self.data[column].dropna().apply(lambda text: {
+            "Flesch_Reading_Ease": flesch_reading_ease(text),
+            "SMOG_Index": smog_index(text),
+            "Dale_Chall_Score": dale_chall_readability_score(text)
+        })
+
+        return pd.DataFrame(scores.tolist(), index=self.data.index)
+
