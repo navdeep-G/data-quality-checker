@@ -42,6 +42,7 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import ruptures as rpt
 from scipy.fftpack import fft
+import textstat
 
 
 # 1. DataQualityChecker Class (20 methods)
@@ -2749,8 +2750,6 @@ class NLPAnalyzer:
         lengths = self.data[column].str.len()
         return self.data[(lengths < min_length) | (lengths > max_length)]
 
-    from textstat import flesch_reading_ease, smog_index, dale_chall_readability_score
-
     def text_readability_score(self, column):
         """
         Compute readability scores for text data.
@@ -2776,4 +2775,21 @@ class NLPAnalyzer:
         })
 
         return pd.DataFrame(scores.tolist(), index=self.data.index)
+
+    def lexical_diversity(self, column):
+        """
+        Compute lexical diversity (ratio of unique words to total words).
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Lexical diversity score for each row.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        return self.data[column].dropna().apply(
+            lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0)
+
 
