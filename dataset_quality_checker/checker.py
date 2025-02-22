@@ -2989,6 +2989,38 @@ class NLPAnalyzer:
         return self.data[column].dropna().apply(
             lambda x: sum(syllable_count(word) for word in x.split()) / len(x.split()) if x.strip() else 0)
 
+    from collections import Counter
+    from wordcloud import WordCloud
+
+    def most_common_words(self, column, top_n=20):
+        """
+        Identify the most common words in a text column.
+
+        Args:
+            column (str): The text column to analyze.
+            top_n (int): Number of top words to display.
+
+        Returns:
+            dict: Most common words with counts.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        words = self.data[column].dropna().str.split().explode()
+        word_counts = Counter(words)
+
+        # Generate a WordCloud
+        wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_counts)
+
+        plt.figure(figsize=(10, 5))
+        plt.imshow(wordcloud, interpolation='bilinear')
+        plt.axis("off")
+        plt.title("Word Cloud of Most Common Words")
+        plt.show()
+
+        return dict(word_counts.most_common(top_n))
+
+
 
 
 
