@@ -2919,6 +2919,32 @@ class NLPAnalyzer:
 
         return self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.subjectivity)
 
+    def word_length_distribution(self, column):
+        """
+        Compute and visualize the distribution of word lengths.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Word length frequency distribution.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        word_lengths = self.data[column].dropna().apply(lambda x: [len(word) for word in x.split()])
+        all_lengths = [length for sublist in word_lengths for length in sublist]
+
+        plt.figure(figsize=(10, 5))
+        sns.histplot(all_lengths, bins=20, kde=True)
+        plt.title("Word Length Distribution")
+        plt.xlabel("Word Length")
+        plt.ylabel("Frequency")
+        plt.show()
+
+        return pd.Series(all_lengths).value_counts().sort_index()
+
+
 
 
 
