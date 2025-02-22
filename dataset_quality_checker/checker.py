@@ -3020,6 +3020,30 @@ class NLPAnalyzer:
 
         return dict(word_counts.most_common(top_n))
 
+    def character_count_distribution(self, column):
+        """
+        Compute and visualize the distribution of character counts.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Character count distribution.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        char_counts = self.data[column].dropna().apply(len)
+
+        plt.figure(figsize=(10, 5))
+        sns.histplot(char_counts, bins=20, kde=True)
+        plt.title("Character Count Distribution")
+        plt.xlabel("Character Count")
+        plt.ylabel("Frequency")
+        plt.show()
+
+        return char_counts.value_counts().sort_index()
+
 
 
 
