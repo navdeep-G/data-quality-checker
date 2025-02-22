@@ -2875,4 +2875,32 @@ class NLPAnalyzer:
         return self.data[column].dropna().apply(
             lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0)
 
+    from sklearn.metrics.pairwise import cosine_similarity
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    def detect_contextual_anomalies(self, column, threshold=0.2):
+        """
+        Identify outlier text entries using cosine similarity.
+
+        Args:
+            column (str): The text column to analyze.
+            threshold (float): Cosine similarity threshold for anomaly detection.
+
+        Returns:
+            list: Rows that deviate significantly from the rest.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        text_data = self.data[column].dropna().astype(str)
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(text_data)
+
+        similarity_matrix = cosine_similarity(tfidf_matrix)
+        avg_similarity = similarity_matrix.mean(axis=1)
+
+        anomalies = text_data[avg_similarity < threshold]
+        return anomalies.tolist()
+
+
 
