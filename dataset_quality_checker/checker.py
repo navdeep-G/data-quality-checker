@@ -2944,6 +2944,34 @@ class NLPAnalyzer:
 
         return pd.Series(all_lengths).value_counts().sort_index()
 
+    def sentence_length_distribution(self, column):
+        """
+        Compute and visualize sentence length distribution.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Sentence length frequency distribution.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        nltk.download("punkt", quiet=True)
+
+        sentence_lengths = self.data[column].dropna().apply(lambda x: [len(sent.split()) for sent in sent_tokenize(x)])
+        all_lengths = [length for sublist in sentence_lengths for length in sublist]
+
+        plt.figure(figsize=(10, 5))
+        sns.histplot(all_lengths, bins=20, kde=True)
+        plt.title("Sentence Length Distribution")
+        plt.xlabel("Number of Words in Sentence")
+        plt.ylabel("Frequency")
+        plt.show()
+
+        return pd.Series(all_lengths).value_counts().sort_index()
+
+
 
 
 
