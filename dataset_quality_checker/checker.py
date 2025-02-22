@@ -2971,6 +2971,25 @@ class NLPAnalyzer:
 
         return pd.Series(all_lengths).value_counts().sort_index()
 
+    from textstat import syllable_count
+
+    def text_complexity(self, column):
+        """
+        Compute text complexity by measuring the average syllables per word.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Average syllables per word for each row.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        return self.data[column].dropna().apply(
+            lambda x: sum(syllable_count(word) for word in x.split()) / len(x.split()) if x.strip() else 0)
+
+
 
 
 
