@@ -2792,4 +2792,22 @@ class NLPAnalyzer:
         return self.data[column].dropna().apply(
             lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0)
 
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
+    def sentiment_intensity(self, column):
+        """
+        Perform sentiment analysis using VADER (for short texts).
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.DataFrame: Sentiment scores (positive, neutral, negative, compound).
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        analyzer = SentimentIntensityAnalyzer()
+        scores = self.data[column].dropna().apply(lambda text: analyzer.polarity_scores(text))
+
+        return pd.DataFrame(scores.tolist(), index=self.data.index)
