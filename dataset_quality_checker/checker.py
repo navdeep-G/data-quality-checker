@@ -2839,3 +2839,40 @@ class NLPAnalyzer:
 
         return {k: list(v) for k, v in entity_dict.items() if len(v) > 1}
 
+    from empath import Empath
+
+    def emotion_detection(self, column):
+        """
+        Detect emotions in text using Empath.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.DataFrame: A DataFrame with emotion scores.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        lexicon = Empath()
+        emotions = self.data[column].dropna().apply(lambda text: lexicon.analyze(text, normalize=True))
+
+        return pd.DataFrame(emotions.tolist(), index=self.data.index)
+
+    def text_compression_ratio(self, column):
+        """
+        Calculate text compression ratio (lower means more compact text).
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Compression ratio values.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        return self.data[column].dropna().apply(
+            lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0)
+
+
