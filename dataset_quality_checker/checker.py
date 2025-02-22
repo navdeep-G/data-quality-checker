@@ -2811,3 +2811,31 @@ class NLPAnalyzer:
         scores = self.data[column].dropna().apply(lambda text: analyzer.polarity_scores(text))
 
         return pd.DataFrame(scores.tolist(), index=self.data.index)
+
+    import spacy
+
+    def named_entity_consistency(self, column, entity_type="ORG"):
+        """
+        Detect inconsistent usage of named entities.
+
+        Args:
+            column (str): The text column to analyze.
+            entity_type (str): Type of named entity (e.g., 'ORG', 'PERSON', 'GPE').
+
+        Returns:
+            dict: Entities with inconsistent casing or spelling variations.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        nlp = spacy.load("en_core_web_sm")
+        entity_dict = {}
+
+        for text in self.data[column].dropna():
+            doc = nlp(text)
+            for ent in doc.ents:
+                if ent.label_ == entity_type:
+                    entity_dict.setdefault(ent.text.lower(), set()).add(ent.text)
+
+        return {k: list(v) for k, v in entity_dict.items() if len(v) > 1}
+
