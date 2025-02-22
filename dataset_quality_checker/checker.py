@@ -2902,5 +2902,23 @@ class NLPAnalyzer:
         anomalies = text_data[avg_similarity < threshold]
         return anomalies.tolist()
 
+    from textblob import TextBlob
+
+    def subjectivity_analysis(self, column):
+        """
+        Compute subjectivity scores (0 = objective, 1 = highly subjective).
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Subjectivity scores.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        return self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.subjectivity)
+
+
 
 
