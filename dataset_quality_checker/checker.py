@@ -3044,6 +3044,30 @@ class NLPAnalyzer:
 
         return char_counts.value_counts().sort_index()
 
+    from sklearn.feature_extraction.text import CountVectorizer
+
+    def n_gram_distribution(self, column, n=2, top_n=20):
+        """
+        Identify most common n-grams in text data.
+
+        Args:
+            column (str): The text column to analyze.
+            n (int): Size of the n-gram (2 for bigrams, 3 for trigrams).
+            top_n (int): Number of top n-grams to display.
+
+        Returns:
+            dict: Most common n-grams with counts.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        vectorizer = CountVectorizer(ngram_range=(n, n), stop_words="english")
+        n_grams = vectorizer.fit_transform(self.data[column].dropna())
+
+        n_gram_counts = dict(zip(vectorizer.get_feature_names_out(), n_grams.toarray().sum(axis=0)))
+        sorted_n_grams = dict(sorted(n_gram_counts.items(), key=lambda item: item[1], reverse=True)[:top_n])
+
+        return sorted_n_grams
 
 
 
