@@ -3069,6 +3069,29 @@ class NLPAnalyzer:
 
         return sorted_n_grams
 
+    def sentiment_distribution(self, column):
+        """
+        Plot sentiment polarity distribution.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            None
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        sentiments = self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.polarity)
+
+        plt.figure(figsize=(10, 5))
+        sns.histplot(sentiments, bins=20, kde=True)
+        plt.title("Sentiment Polarity Distribution")
+        plt.xlabel("Sentiment Polarity (-1 to 1)")
+        plt.ylabel("Frequency")
+        plt.show()
+
+
 
 
 
