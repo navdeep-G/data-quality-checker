@@ -13,3 +13,8 @@ ruptures>=1.1.7
 rake-nltk>=1.0.4
 spacy>=2.2.0
 gensim==4.3.3
+
+pytest~=8.3.4
+setuptools~=75.1.0
+holidays~=0.48
+textstat~=0.7.5

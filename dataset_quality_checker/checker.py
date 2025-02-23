@@ -2769,9 +2769,9 @@ class NLPAnalyzer:
             raise ValueError(f"Column '{column}' must be of string type.")
 
         scores = self.data[column].dropna().apply(lambda text: {
-            "Flesch_Reading_Ease": flesch_reading_ease(text),
-            "SMOG_Index": smog_index(text),
-            "Dale_Chall_Score": dale_chall_readability_score(text)
+            "Flesch_Reading_Ease": textstat.flesch_reading_ease(text),
+            "SMOG_Index": textstat.smog_index(text),
+            "Dale_Chall_Score": textstat.dale_chall_readability_score(text)
         })
 
         return pd.DataFrame(scores.tolist(), index=self.data.index)
@@ -2791,28 +2791,6 @@ class NLPAnalyzer:
 
         return self.data[column].dropna().apply(
             lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0)
-
-    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-
-    def sentiment_intensity(self, column):
-        """
-        Perform sentiment analysis using VADER (for short texts).
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            pd.DataFrame: Sentiment scores (positive, neutral, negative, compound).
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        analyzer = SentimentIntensityAnalyzer()
-        scores = self.data[column].dropna().apply(lambda text: analyzer.polarity_scores(text))
-
-        return pd.DataFrame(scores.tolist(), index=self.data.index)
-
-    import spacy
 
     def named_entity_consistency(self, column, entity_type="ORG"):
         """
@@ -2839,26 +2817,6 @@ class NLPAnalyzer:
 
         return {k: list(v) for k, v in entity_dict.items() if len(v) > 1}
 
-    from empath import Empath
-
-    def emotion_detection(self, column):
-        """
-        Detect emotions in text using Empath.
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            pd.DataFrame: A DataFrame with emotion scores.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        lexicon = Empath()
-        emotions = self.data[column].dropna().apply(lambda text: lexicon.analyze(text, normalize=True))
-
-        return pd.DataFrame(emotions.tolist(), index=self.data.index)
-
     def text_compression_ratio(self, column):
         """
         Calculate text compression ratio (lower means more compact text).
@@ -2874,9 +2832,6 @@ class NLPAnalyzer:
 
         return self.data[column].dropna().apply(
             lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0)
-
-    from sklearn.metrics.pairwise import cosine_similarity
-    from sklearn.feature_extraction.text import TfidfVectorizer
 
     def detect_contextual_anomalies(self, column, threshold=0.2):
         """
@@ -2970,55 +2925,6 @@ class NLPAnalyzer:
         plt.show()
 
         return pd.Series(all_lengths).value_counts().sort_index()
-
-    from textstat import syllable_count
-
-    def text_complexity(self, column):
-        """
-        Compute text complexity by measuring the average syllables per word.
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            pd.Series: Average syllables per word for each row.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        return self.data[column].dropna().apply(
-            lambda x: sum(syllable_count(word) for word in x.split()) / len(x.split()) if x.strip() else 0)
-
-    from collections import Counter
-    from wordcloud import WordCloud
-
-    def most_common_words(self, column, top_n=20):
-        """
-        Identify the most common words in a text column.
-
-        Args:
-            column (str): The text column to analyze.
-            top_n (int): Number of top words to display.
-
-        Returns:
-            dict: Most common words with counts.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        words = self.data[column].dropna().str.split().explode()
-        word_counts = Counter(words)
-
-        # Generate a WordCloud
-        wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_counts)
-
-        plt.figure(figsize=(10, 5))
-        plt.imshow(wordcloud, interpolation='bilinear')
-        plt.axis("off")
-        plt.title("Word Cloud of Most Common Words")
-        plt.show()
-
-        return dict(word_counts.most_common(top_n))
 
     def character_count_distribution(self, column):
         """
