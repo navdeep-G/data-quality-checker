@@ -43,6 +43,8 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import ruptures as rpt
 from scipy.fftpack import fft
 import textstat
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 # 1. DataQualityChecker Class (20 methods)
@@ -2996,6 +2998,40 @@ class NLPAnalyzer:
         plt.xlabel("Sentiment Polarity (-1 to 1)")
         plt.ylabel("Frequency")
         plt.show()
+
+    def pos_distribution(self, column):
+        """
+        Compute the distribution of parts of speech (POS) in text data.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            dict: POS tag counts.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        # Load pre-trained spaCy NLP model
+        nlp = spacy.load("en_core_web_sm")
+        pos_counts = Counter()
+
+        # Process each text entry in the column
+        for text in self.data[column].dropna():
+            doc = nlp(text)
+            pos_counts.update([token.pos_ for token in doc])  # Count POS tags
+
+        # Plot POS distribution
+        plt.figure(figsize=(10, 5))
+        sns.barplot(x=list(pos_counts.keys()), y=list(pos_counts.values()))
+        plt.title("Part-of-Speech (POS) Distribution")
+        plt.xlabel("POS Tag")
+        plt.ylabel("Count")
+        plt.xticks(rotation=45)
+        plt.show()
+
+        return dict(pos_counts)
+
 
 
 
