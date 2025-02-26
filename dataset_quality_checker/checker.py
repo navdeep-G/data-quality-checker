@@ -3052,6 +3052,23 @@ class NLPAnalyzer:
 
         return len(unique_words) / len(all_words) if len(all_words) > 0 else 0
 
+    from textblob import TextBlob
+
+    def sentiment_score(self, column):
+        """
+        Compute sentiment polarity scores for text data.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Sentiment polarity scores (-1 to 1).
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        return self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.polarity)
+
 
 
 
