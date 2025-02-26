@@ -3032,6 +3032,27 @@ class NLPAnalyzer:
 
         return dict(pos_counts)
 
+    from collections import Counter
+
+    def lexical_diversity(self, column):
+        """
+        Compute the lexical diversity of text data.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            float: The lexical diversity score (unique words / total words).
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        all_words = self.data[column].dropna().str.split().explode()
+        unique_words = set(all_words)
+
+        return len(unique_words) / len(all_words) if len(all_words) > 0 else 0
+
+
 
 
 
