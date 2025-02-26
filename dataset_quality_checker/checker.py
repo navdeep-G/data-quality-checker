@@ -2686,7 +2686,19 @@ class NLPAnalyzer:
         return self.data[column].apply(lambda x: TextBlob(x).sentiment)
 
     def detect_language(self, column):
-        return self.data[column].apply(lambda x: detect(x) if pd.notnull(x) else None)
+        """
+        Detect the language of text data.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Detected language codes.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        return self.data[column].dropna().apply(lambda x: detect(x))
 
     def compute_tfidf(self, column, max_features=100):
         tfidf_vectorizer = TfidfVectorizer(max_features=max_features)
@@ -3089,23 +3101,6 @@ class NLPAnalyzer:
         phrase_counts = Counter(phrases)
 
         return {phrase: count for phrase, count in phrase_counts.items() if count >= n}
-
-    from langdetect import detect
-
-    def detect_language(self, column):
-        """
-        Detect the language of text data.
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            pd.Series: Detected language codes.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        return self.data[column].dropna().apply(lambda x: detect(x))
 
 
 
