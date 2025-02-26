@@ -3090,6 +3090,24 @@ class NLPAnalyzer:
 
         return {phrase: count for phrase, count in phrase_counts.items() if count >= n}
 
+    from langdetect import detect
+
+    def detect_language(self, column):
+        """
+        Detect the language of text data.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Detected language codes.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        return self.data[column].dropna().apply(lambda x: detect(x))
+
+
 
 
 
