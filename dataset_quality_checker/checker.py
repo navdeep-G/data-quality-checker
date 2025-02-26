@@ -3069,6 +3069,28 @@ class NLPAnalyzer:
 
         return self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.polarity)
 
+    from collections import Counter
+
+    def check_text_redundancy(self, column, n=3):
+        """
+        Identify commonly repeated phrases in text data.
+
+        Args:
+            column (str): The text column to analyze.
+            n (int): Minimum number of occurrences to consider redundancy.
+
+        Returns:
+            dict: Repeated phrases and their counts.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        phrases = self.data[column].dropna().str.split().explode()
+        phrase_counts = Counter(phrases)
+
+        return {phrase: count for phrase, count in phrase_counts.items() if count >= n}
+
+
 
 
 
