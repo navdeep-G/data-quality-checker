@@ -2654,7 +2654,7 @@ class NLPAnalyzer:
         else:
             raise ValueError("Invalid level. Choose from 'word' or 'sentence'.")
 
-    def check_text_similarity(self, column, similarity_threshold=0.8):
+    def find_text_pairs(self, column, similarity_threshold=0.8):
         """
         Identify pairs of text entries in a column with high similarity.
 
@@ -2705,7 +2705,7 @@ class NLPAnalyzer:
         tfidf_matrix = tfidf_vectorizer.fit_transform(self.data[column].dropna())
         return pd.DataFrame(tfidf_matrix.toarray(), columns=tfidf_vectorizer.get_feature_names_out())
 
-    def text_similarity(self, column):
+    def compute_text_similarity_matrix(self, column):
         tfidf = TfidfVectorizer()
         tfidf_matrix = tfidf.fit_transform(self.data[column])
         similarity_matrix = cosine_similarity(tfidf_matrix)
