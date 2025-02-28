@@ -2790,21 +2790,40 @@ class NLPAnalyzer:
 
         return pd.DataFrame(scores.tolist(), index=self.data.index)
 
-    def lexical_diversity(self, column):
+    def lexical_diversity(self, column, mode="row"):
         """
         Compute lexical diversity (ratio of unique words to total words).
 
         Args:
             column (str): The text column to analyze.
+            mode (str): "row" for row-wise diversity (default), "overall" for dataset-wide diversity.
 
         Returns:
-            pd.Series: Lexical diversity score for each row.
+            float or pd.Series:
+                - If mode="row": Returns a Pandas Series with lexical diversity scores for each row.
+                - If mode="overall": Returns a single float representing lexical diversity for the entire dataset.
+
+        Raises:
+            ValueError: If the column does not exist or mode is invalid.
         """
         if column not in self.data.columns:
             raise ValueError(f"Column '{column}' does not exist.")
 
-        return self.data[column].dropna().apply(
-            lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0)
+        # Tokenize and flatten words for row-wise computation
+        if mode == "row":
+            return self.data[column].dropna().apply(
+                lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0
+            )
+
+        # Compute overall lexical diversity for the entire dataset
+        elif mode == "overall":
+            all_words = self.data[column].dropna().str.split().explode()
+            unique_words = set(all_words)
+            return len(unique_words) / len(all_words) if len(all_words) > 0 else 0
+
+        else:
+            raise ValueError(
+                "Invalid mode. Choose 'row' for per-row diversity or 'overall' for dataset-wide diversity.")
 
     def named_entity_consistency(self, column, entity_type="ORG"):
         """
@@ -3043,28 +3062,6 @@ class NLPAnalyzer:
         plt.show()
 
         return dict(pos_counts)
-
-    from collections import Counter
-
-    def lexical_diversity(self, column):
-        """
-        Compute the lexical diversity of text data.
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            float: The lexical diversity score (unique words / total words).
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        all_words = self.data[column].dropna().str.split().explode()
-        unique_words = set(all_words)
-
-        return len(unique_words) / len(all_words) if len(all_words) > 0 else 0
-
-    from textblob import TextBlob
 
     def sentiment_score(self, column):
         """
