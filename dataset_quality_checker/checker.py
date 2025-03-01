@@ -2700,17 +2700,6 @@ class NLPAnalyzer:
 
         return self.data[column].dropna().apply(lambda x: detect(x))
 
-    def compute_tfidf(self, column, max_features=100):
-        tfidf_vectorizer = TfidfVectorizer(max_features=max_features)
-        tfidf_matrix = tfidf_vectorizer.fit_transform(self.data[column].dropna())
-        return pd.DataFrame(tfidf_matrix.toarray(), columns=tfidf_vectorizer.get_feature_names_out())
-
-    def compute_text_similarity_matrix(self, column):
-        tfidf = TfidfVectorizer()
-        tfidf_matrix = tfidf.fit_transform(self.data[column])
-        similarity_matrix = cosine_similarity(tfidf_matrix)
-        return pd.DataFrame(similarity_matrix)
-
     def count_stopwords(self, column, language="english"):
         stop_words = set(stopwords.words(language))
         return self.data[column].apply(lambda x: sum(1 for w in str(x).split() if w.lower() in stop_words))
@@ -2747,15 +2736,6 @@ class NLPAnalyzer:
             word_counts.toarray(), columns=vectorizer.get_feature_names_out()
         ).sum().sort_values(ascending=False).head(top_n)
         return word_freq
-
-    def compute_cosine_similarity(self, column):
-        """
-        Compute pairwise cosine similarity for text entries.
-        """
-        tfidf = TfidfVectorizer()
-        tfidf_matrix = tfidf.fit_transform(self.data[column].dropna())
-        similarity_matrix = cosine_similarity(tfidf_matrix)
-        return pd.DataFrame(similarity_matrix)
 
     def analyze_text_length(self, column, min_length=5, max_length=500):
         """
@@ -3098,3 +3078,37 @@ class NLPAnalyzer:
         phrase_counts = Counter(phrases)
 
         return {phrase: count for phrase, count in phrase_counts.items() if count >= n}
+
+    def text_vectorization_analysis(self, column, method="tfidf", max_features=100):
+        """
+        Perform text vectorization and similarity analysis.
+
+        Args:
+            column (str): The text column to analyze.
+            method (str): "tfidf" for TF-IDF vectors, "cosine" for cosine similarity, "similarity_matrix" for full similarity matrix.
+            max_features (int): Max number of features for vectorization.
+
+        Returns:
+            - If method="tfidf": Returns a TF-IDF DataFrame.
+            - If method="cosine": Returns cosine similarity scores.
+            - If method="similarity_matrix": Returns a similarity matrix DataFrame.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        text_data = self.data[column].dropna().astype(str)
+        vectorizer = TfidfVectorizer(max_features=max_features)
+        tfidf_matrix = vectorizer.fit_transform(text_data)
+
+        if method == "tfidf":
+            return pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out())
+
+        elif method == "cosine":
+            return cosine_similarity(tfidf_matrix)
+
+        elif method == "similarity_matrix":
+            similarity_matrix = cosine_similarity(tfidf_matrix)
+            return pd.DataFrame(similarity_matrix, index=text_data.index, columns=text_data.index)
+
+        else:
+            raise ValueError("Invalid method. Choose 'tfidf', 'cosine', or 'similarity_matrix'.")
