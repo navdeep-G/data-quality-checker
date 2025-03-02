@@ -2709,10 +2709,6 @@ class NLPAnalyzer:
         n_grams = vectorizer.fit_transform(self.data[column].dropna())
         return dict(sorted(Counter(vectorizer.vocabulary_).items(), key=lambda x: x[1]))
 
-    def frequent_words(self, col):
-        all_words = self.data[col].str.split().explode()
-        return Counter(all_words).most_common()
-
     def category_feature_interaction(self, categorical_column, numeric_column):
         """
         Analyze interaction between categorical and numeric columns.
@@ -2721,21 +2717,6 @@ class NLPAnalyzer:
             raise ValueError("One or both specified columns do not exist.")
         interaction_stats = self.data.groupby(categorical_column)[numeric_column].describe()
         return interaction_stats
-
-    def word_frequency(self, column, top_n=10):
-        words = self.data[column].dropna().str.split().explode()
-        return Counter(words).most_common(top_n)
-
-    def check_common_words(self, column, top_n=10):
-        """Identify the most common words in a text column."""
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-        vectorizer = CountVectorizer(stop_words=stopwords.words("english"))
-        word_counts = vectorizer.fit_transform(self.data[column].dropna())
-        word_freq = pd.DataFrame(
-            word_counts.toarray(), columns=vectorizer.get_feature_names_out()
-        ).sum().sort_values(ascending=False).head(top_n)
-        return word_freq
 
     def analyze_text_length(self, column, min_length=5, max_length=500):
         """
@@ -3112,3 +3093,35 @@ class NLPAnalyzer:
 
         else:
             raise ValueError("Invalid method. Choose 'tfidf', 'cosine', or 'similarity_matrix'.")
+
+    def word_frequency_analysis(self, column, top_n=10, exclude_stopwords=True, language="english"):
+        """
+        Analyze word frequency in a text column.
+
+        Args:
+            column (str): The text column to analyze.
+            top_n (int): Number of most common words to return.
+            exclude_stopwords (bool): Whether to exclude stopwords.
+            language (str): Language for stopword filtering.
+
+        Returns:
+            dict: Word frequency count.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        text_data = self.data[column].dropna().astype(str)
+
+        # Tokenize words
+        words = text_data.str.split().explode()
+
+        # Remove stopwords if needed
+        if exclude_stopwords:
+            stop_words = set(stopwords.words(language))
+            words = words[~words.isin(stop_words)]
+
+        # Count word frequency
+        word_counts = Counter(words)
+
+        return word_counts.most_common(top_n)
+
