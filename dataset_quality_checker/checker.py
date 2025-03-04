@@ -2497,35 +2497,6 @@ class NLPAnalyzer:
 
         return self.data[column].apply(extract)
 
-    def named_entity_frequency(self, column, entity_type='PERSON', model='spacy'):
-        """
-        Calculate the frequency of a specific named entity type in a text column.
-
-        Args:
-            column (str): The text column to analyze.
-            entity_type (str): The entity type to count (e.g., PERSON, ORG, DATE).
-            model (str): NLP model for NER ('spacy').
-
-        Returns:
-            dict: Frequency distribution of named entities of the specified type.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-        if not pd.api.types.is_string_dtype(self.data[column]):
-            raise ValueError(f"Column '{column}' must be of string type.")
-
-        nlp = spacy.load('en_core_web_sm')
-
-        entity_counts = {}
-
-        for text in self.data[column].dropna():
-            doc = nlp(text)
-            for ent in doc.ents:
-                if ent.label_ == entity_type:
-                    entity_counts[ent.text] = entity_counts.get(ent.text, 0) + 1
-
-        return dict(sorted(entity_counts.items(), key=lambda x: x[1], reverse=True))
-
     def topic_modeling(self, column, n_topics=5, n_top_words=5):
         """
         Perform topic modeling on a text column using Latent Dirichlet Allocation (LDA).
@@ -2556,73 +2527,6 @@ class NLPAnalyzer:
             top_words = [feature_names[i] for i in topic.argsort()[:-n_top_words - 1:-1]]
             topics.append(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
         return topics
-
-    def named_entity_recognition(self, column, model='spacy', entity_types=None):
-        """
-        Extract named entities like names, organizations, or dates from text.
-
-        Args:
-            column (str): The name of the text column to analyze.
-            model (str): NLP model for NER ('spacy' or 'nltk').
-            entity_types (list): List of entity types to filter (e.g., ['PERSON', 'ORG', 'DATE']).
-
-        Returns:
-            pd.Series: A pandas Series containing dictionaries of extracted entities for each row.
-
-        Raises:
-            ValueError: If the column does not exist, is not string type, or invalid model is specified.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-
-        if not pd.api.types.is_string_dtype(self.data[column]):
-            raise ValueError(f"Column '{column}' must be of string type.")
-
-        if model not in ['spacy', 'nltk']:
-            raise ValueError("Invalid model. Choose from 'spacy' or 'nltk'.")
-
-        nltk.download('punkt', quiet=True)
-        nltk.download('averaged_perceptron_tagger', quiet=True)
-        nltk.download('maxent_ne_chunker', quiet=True)
-        nltk.download('words', quiet=True)
-
-        results = []
-
-        if model == 'spacy':
-            nlp = spacy.load('en_core_web_sm')
-
-            def extract_entities_spacy(text):
-                if pd.isnull(text) or not text.strip():
-                    return {}
-                doc = nlp(text)
-                entities = {ent.label_: [] for ent in doc.ents}
-                for ent in doc.ents:
-                    if not entity_types or ent.label_ in entity_types:
-                        entities.setdefault(ent.label_, []).append(ent.text)
-                return entities
-
-            results = self.data[column].apply(extract_entities_spacy)
-
-        elif model == 'nltk':
-
-            def extract_entities_nltk(text):
-                if pd.isnull(text) or not text.strip():
-                    return {}
-                tokens = word_tokenize(text)
-                tagged = pos_tag(tokens)
-                chunked = ne_chunk(tagged)
-                entities = {}
-                for subtree in chunked:
-                    if isinstance(subtree, Tree):
-                        entity_label = subtree.label()
-                        entity_text = " ".join([token for token, pos in subtree.leaves()])
-                        if not entity_types or entity_label in entity_types:
-                            entities.setdefault(entity_label, []).append(entity_text)
-                return entities
-
-            results = self.data[column].apply(extract_entities_nltk)
-
-        return results
 
     def text_tokenization(self, column, level='word', language='english'):
         """
@@ -3124,4 +3028,73 @@ class NLPAnalyzer:
         word_counts = Counter(words)
 
         return word_counts.most_common(top_n)
+
+    def named_entity_analysis(self, column, model='spacy', entity_types=None, return_frequency=False):
+        """
+        Perform Named Entity Recognition (NER) and optionally compute entity frequency.
+
+        Args:
+            column (str): The text column to analyze.
+            model (str): NLP model for NER ('spacy' or 'nltk').
+            entity_types (list, optional): List of entity types to filter (e.g., ['PERSON', 'ORG', 'DATE']).
+            return_frequency (bool): If True, return entity frequency instead of per-row entity extraction.
+
+        Returns:
+            - If return_frequency=False: A pandas Series with extracted named entities for each row.
+            - If return_frequency=True: A dictionary with entity frequency counts.
+
+        Raises:
+            ValueError: If the column does not exist, is not string type, or invalid model is specified.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist in the dataset.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+        if model not in ['spacy', 'nltk']:
+            raise ValueError("Invalid model. Choose from 'spacy' or 'nltk'.")
+
+        entity_counts = Counter()
+        results = []
+
+        if model == 'spacy':
+            nlp = spacy.load('en_core_web_sm')
+
+            def extract_entities_spacy(text):
+                if pd.isnull(text) or not text.strip():
+                    return {}
+                doc = nlp(text)
+                entities = {ent.label_: [] for ent in doc.ents}
+                for ent in doc.ents:
+                    if not entity_types or ent.label_ in entity_types:
+                        entities.setdefault(ent.label_, []).append(ent.text)
+                        entity_counts[ent.text] += 1  # Count occurrences
+                return entities
+
+            results = self.data[column].apply(extract_entities_spacy)
+
+        elif model == 'nltk':
+            nltk.download('punkt', quiet=True)
+            nltk.download('averaged_perceptron_tagger', quiet=True)
+            nltk.download('maxent_ne_chunker', quiet=True)
+            nltk.download('words', quiet=True)
+
+            def extract_entities_nltk(text):
+                if pd.isnull(text) or not text.strip():
+                    return {}
+                tokens = word_tokenize(text)
+                tagged = pos_tag(tokens)
+                chunked = ne_chunk(tagged)
+                entities = {}
+                for subtree in chunked:
+                    if isinstance(subtree, Tree):
+                        entity_label = subtree.label()
+                        entity_text = " ".join([token for token, pos in subtree.leaves()])
+                        if not entity_types or entity_label in entity_types:
+                            entities.setdefault(entity_label, []).append(entity_text)
+                            entity_counts[entity_text] += 1  # Count occurrences
+                return entities
+
+            results = self.data[column].apply(extract_entities_nltk)
+
+        return dict(sorted(entity_counts.items(), key=lambda x: x[1], reverse=True)) if return_frequency else results
 
