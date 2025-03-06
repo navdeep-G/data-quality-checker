@@ -2528,36 +2528,6 @@ class NLPAnalyzer:
             topics.append(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
         return topics
 
-    def text_tokenization(self, column, level='word', language='english'):
-        """
-        Tokenize text into words or sentences for pre-processing.
-
-        Args:
-            column (str): The name of the text column to tokenize.
-            level (str): Level of tokenization - 'word' or 'sentence'.
-            language (str): Language of the text (default is 'english').
-
-        Returns:
-            pd.Series: A pandas Series containing tokenized words or sentences for each row.
-
-        Raises:
-            ValueError: If the column does not exist or is not of string type.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-
-        if not pd.api.types.is_string_dtype(self.data[column]):
-            raise ValueError(f"Column '{column}' must be of string type.")
-
-        nltk.download('punkt', quiet=True)  # Ensure tokenizers are downloaded
-
-        if level == 'word':
-            return self.data[column].fillna("").apply(lambda x: word_tokenize(x, language=language))
-        elif level == 'sentence':
-            return self.data[column].fillna("").apply(lambda x: sent_tokenize(x, language=language))
-        else:
-            raise ValueError("Invalid level. Choose from 'word' or 'sentence'.")
-
     def find_text_pairs(self, column, similarity_threshold=0.8):
         """
         Identify pairs of text entries in a column with high similarity.
@@ -2607,11 +2577,6 @@ class NLPAnalyzer:
     def count_stopwords(self, column, language="english"):
         stop_words = set(stopwords.words(language))
         return self.data[column].apply(lambda x: sum(1 for w in str(x).split() if w.lower() in stop_words))
-
-    def n_gram_analysis(self, column, n=2):
-        vectorizer = CountVectorizer(ngram_range=(n, n))
-        n_grams = vectorizer.fit_transform(self.data[column].dropna())
-        return dict(sorted(Counter(vectorizer.vocabulary_).items(), key=lambda x: x[1]))
 
     def category_feature_interaction(self, categorical_column, numeric_column):
         """
@@ -3097,4 +3062,40 @@ class NLPAnalyzer:
             results = self.data[column].apply(extract_entities_nltk)
 
         return dict(sorted(entity_counts.items(), key=lambda x: x[1], reverse=True)) if return_frequency else results
+
+    def text_tokenization_analysis(self, column, level="word", n_gram=None, language="english"):
+        """
+        Perform text tokenization and n-gram analysis.
+
+        Args:
+            column (str): The text column to tokenize.
+            level (str): "word" for word tokenization, "sentence" for sentence tokenization.
+            n_gram (int): Set to an integer (e.g., 2 for bigrams) to compute n-grams.
+            language (str): Language for tokenization.
+
+        Returns:
+            pd.Series or dict: Tokenized text or n-gram counts.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        nltk.download("punkt", quiet=True)
+
+        text_data = self.data[column].dropna().astype(str)
+
+        if n_gram:
+            vectorizer = CountVectorizer(ngram_range=(n_gram, n_gram), stop_words="english")
+            n_grams = vectorizer.fit_transform(text_data)
+            n_gram_counts = dict(zip(vectorizer.get_feature_names_out(), n_grams.toarray().sum(axis=0)))
+            return dict(sorted(n_gram_counts.items(), key=lambda x: x[1], reverse=True))
+
+        if level == "word":
+            return text_data.apply(lambda x: word_tokenize(x, language=language))
+
+        elif level == "sentence":
+            return text_data.apply(lambda x: sent_tokenize(x, language=language))
+
+        else:
+            raise ValueError("Invalid level. Choose 'word' or 'sentence'.")
+
 
