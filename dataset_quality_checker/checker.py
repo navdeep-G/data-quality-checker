@@ -10,8 +10,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
-import matplotlib.pyplot as plt
-import seaborn as sns
 import json
 import phonenumbers
 import gensim.downloader as api
@@ -43,8 +41,6 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import ruptures as rpt
 from scipy.fftpack import fft
 import textstat
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 # 1. DataQualityChecker Class (20 methods)
