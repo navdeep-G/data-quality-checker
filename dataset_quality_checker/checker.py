@@ -2556,9 +2556,6 @@ class NLPAnalyzer:
     def check_text_length(self, column, max_length=255):
         return self.data[self.data[column].str.len() > max_length]
 
-    def sentiment_analysis(self, column):
-        return self.data[column].apply(lambda x: TextBlob(x).sentiment)
-
     def detect_language(self, column):
         """
         Detect the language of text data.
@@ -2838,28 +2835,6 @@ class NLPAnalyzer:
 
         return sorted_n_grams
 
-    def sentiment_distribution(self, column):
-        """
-        Plot sentiment polarity distribution.
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            None
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        sentiments = self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.polarity)
-
-        plt.figure(figsize=(10, 5))
-        sns.histplot(sentiments, bins=20, kde=True)
-        plt.title("Sentiment Polarity Distribution")
-        plt.xlabel("Sentiment Polarity (-1 to 1)")
-        plt.ylabel("Frequency")
-        plt.show()
-
     def pos_distribution(self, column):
         """
         Compute the distribution of parts of speech (POS) in text data.
@@ -2892,23 +2867,6 @@ class NLPAnalyzer:
         plt.show()
 
         return dict(pos_counts)
-
-    def sentiment_score(self, column):
-        """
-        Compute sentiment polarity scores for text data.
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            pd.Series: Sentiment polarity scores (-1 to 1).
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        return self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.polarity)
-
-    from collections import Counter
 
     def check_text_redundancy(self, column, n=3):
         """
@@ -3097,5 +3055,29 @@ class NLPAnalyzer:
 
         else:
             raise ValueError("Invalid level. Choose 'word' or 'sentence'.")
+
+    def sentiment_analysis(self, column, return_distribution=False):
+        """
+        Perform sentiment analysis on a text column.
+
+        Args:
+            column (str): The text column to analyze.
+            return_distribution (bool): If True, return a distribution of sentiment scores.
+
+        Returns:
+            pd.Series or dict:
+                - If return_distribution=False: Returns a Series with sentiment polarity scores.
+                - If return_distribution=True: Returns a histogram of sentiment scores.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        sentiments = self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.polarity)
+
+        if return_distribution:
+            return dict(sentiments.value_counts().sort_index())
+
+        return sentiments
+
 
 
