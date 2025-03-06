@@ -41,6 +41,8 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import ruptures as rpt
 from scipy.fftpack import fft
 import textstat
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 # 1. DataQualityChecker Class (20 methods)
