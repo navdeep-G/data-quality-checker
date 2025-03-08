@@ -2424,34 +2424,6 @@ class NLPAnalyzer:
         print("🔄 Loading Word2Vec model (Google News 300)...")
         return api.load('word2vec-google-news-300')
 
-    def word_embedding_similarity(self, column, word1, word2):
-        """
-        Calculate similarity between two words for each row in a specified text column.
-
-        Args:
-            column (str): The text column to analyze.
-            word1 (str): First word for comparison.
-            word2 (str): Second word for comparison.
-
-        Returns:
-            pd.Series: A Pandas Series with cosine similarity scores for each row.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' not found in the dataset.")
-
-        if not word1 or not word2:
-            raise ValueError("Both word1 and word2 must be non-empty strings.")
-
-        def calculate_similarity(row):
-            try:
-                if pd.isnull(row):
-                    return None
-                return self.model.similarity(word1, word2)
-            except KeyError as e:
-                return f"Word not found in vocabulary: {e}"
-
-        return self.data[column].apply(calculate_similarity)
-
     def correct_spelling(self, column):
         """
         Correct spelling errors in a text column.
@@ -2690,32 +2662,6 @@ class NLPAnalyzer:
 
         return self.data[column].dropna().apply(
             lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0)
-
-    def detect_contextual_anomalies(self, column, threshold=0.2):
-        """
-        Identify outlier text entries using cosine similarity.
-
-        Args:
-            column (str): The text column to analyze.
-            threshold (float): Cosine similarity threshold for anomaly detection.
-
-        Returns:
-            list: Rows that deviate significantly from the rest.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        text_data = self.data[column].dropna().astype(str)
-        vectorizer = TfidfVectorizer()
-        tfidf_matrix = vectorizer.fit_transform(text_data)
-
-        similarity_matrix = cosine_similarity(tfidf_matrix)
-        avg_similarity = similarity_matrix.mean(axis=1)
-
-        anomalies = text_data[avg_similarity < threshold]
-        return anomalies.tolist()
-
-    from textblob import TextBlob
 
     def subjectivity_analysis(self, column):
         """
@@ -3076,6 +3022,46 @@ class NLPAnalyzer:
             return dict(sentiments.value_counts().sort_index())
 
         return sentiments
+
+    def compute_text_similarity(self, column, method="word2vec", word1=None, word2=None, threshold=0.2):
+        """
+        Compute text similarity using different methods.
+
+        Args:
+            column (str): The text column to analyze.
+            method (str): Similarity method ("word2vec", "tfidf", or "cosine").
+            word1 (str, optional): First word for Word2Vec similarity (required for "word2vec").
+            word2 (str, optional): Second word for Word2Vec similarity (required for "word2vec").
+            threshold (float, optional): Cosine similarity threshold for anomaly detection.
+
+        Returns:
+            Depending on method:
+            - "word2vec": Cosine similarity scores.
+            - "tfidf": Cosine similarity matrix.
+            - "cosine": Outliers detected based on similarity.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        text_data = self.data[column].dropna().astype(str)
+
+        if method == "word2vec":
+            if not word1 or not word2:
+                raise ValueError("Both word1 and word2 must be specified for Word2Vec similarity.")
+            return self.data[column].apply(lambda x: self.model.similarity(word1, word2) if pd.notnull(x) else None)
+
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(text_data)
+
+        if method == "tfidf":
+            return pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out())
+
+        if method == "cosine":
+            similarity_matrix = cosine_similarity(tfidf_matrix)
+            avg_similarity = similarity_matrix.mean(axis=1)
+            anomalies = text_data[avg_similarity < threshold]
+            return anomalies.tolist()
+
+        raise ValueError("Invalid method. Choose 'word2vec', 'tfidf', or 'cosine'.")
 
 
 
