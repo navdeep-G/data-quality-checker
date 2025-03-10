@@ -2554,39 +2554,6 @@ class NLPAnalyzer:
         interaction_stats = self.data.groupby(categorical_column)[numeric_column].describe()
         return interaction_stats
 
-    def analyze_text_length(self, column, min_length=5, max_length=500):
-        """
-        Analyze the length of text entries.
-        """
-        lengths = self.data[column].str.len()
-        return self.data[(lengths < min_length) | (lengths > max_length)]
-
-    def text_readability_score(self, column):
-        """
-        Compute readability scores for text data.
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            pd.DataFrame: A DataFrame containing readability metrics.
-
-        Raises:
-            ValueError: If column is missing or not string type.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-        if not pd.api.types.is_string_dtype(self.data[column]):
-            raise ValueError(f"Column '{column}' must be of string type.")
-
-        scores = self.data[column].dropna().apply(lambda text: {
-            "Flesch_Reading_Ease": textstat.flesch_reading_ease(text),
-            "SMOG_Index": textstat.smog_index(text),
-            "Dale_Chall_Score": textstat.dale_chall_readability_score(text)
-        })
-
-        return pd.DataFrame(scores.tolist(), index=self.data.index)
-
     def lexical_diversity(self, column, mode="row"):
         """
         Compute lexical diversity (ratio of unique words to total words).
@@ -2646,22 +2613,6 @@ class NLPAnalyzer:
                     entity_dict.setdefault(ent.text.lower(), set()).add(ent.text)
 
         return {k: list(v) for k, v in entity_dict.items() if len(v) > 1}
-
-    def text_compression_ratio(self, column):
-        """
-        Calculate text compression ratio (lower means more compact text).
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            pd.Series: Compression ratio values.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        return self.data[column].dropna().apply(
-            lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0)
 
     def subjectivity_analysis(self, column):
         """
@@ -3062,6 +3013,37 @@ class NLPAnalyzer:
             return anomalies.tolist()
 
         raise ValueError("Invalid method. Choose 'word2vec', 'tfidf', or 'cosine'.")
+
+    def analyze_text_complexity(self, column):
+        """
+        Analyze text complexity using readability scores, text length, and compression ratio.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.DataFrame: Readability scores, text length statistics, and compression ratios.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        def compute_metrics(text):
+            if pd.isnull(text):
+                return None
+            words = text.split()
+            unique_words = set(words)
+            return {
+                "Text_Length": len(text),
+                "Word_Count": len(words),
+                "Unique_Word_Ratio": len(unique_words) / len(words) if words else 0,
+                "Flesch_Reading_Ease": textstat.flesch_reading_ease(text),
+                "SMOG_Index": textstat.smog_index(text),
+                "Dale_Chall_Score": textstat.dale_chall_readability_score(text),
+            }
+
+        scores = self.data[column].apply(compute_metrics).dropna()
+        return pd.DataFrame(scores.tolist(), index=self.data.index)
+
 
 
 
