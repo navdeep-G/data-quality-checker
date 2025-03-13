@@ -2441,32 +2441,6 @@ class NLPAnalyzer:
 
         return self.data[column].apply(lambda x: str(TextBlob(x).correct()) if pd.notnull(x) else x)
 
-    def extract_keywords(self, column, top_n=10):
-        """
-        Extract keywords from text data using RAKE (Rapid Automatic Keyword Extraction).
-
-        Args:
-            column (str): The text column to extract keywords from.
-            top_n (int): Number of top keywords to return.
-
-        Returns:
-            pd.Series: Keywords extracted from each row.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-        if not pd.api.types.is_string_dtype(self.data[column]):
-            raise ValueError(f"Column '{column}' must be of string type.")
-
-        rake = Rake()
-
-        def extract(text):
-            if pd.isnull(text):
-                return []
-            rake.extract_keywords_from_text(text)
-            return rake.get_ranked_phrases()[:top_n]
-
-        return self.data[column].apply(extract)
-
     def topic_modeling(self, column, n_topics=5, n_top_words=5):
         """
         Perform topic modeling on a text column using Latent Dirichlet Allocation (LDA).
@@ -2816,37 +2790,6 @@ class NLPAnalyzer:
         else:
             raise ValueError("Invalid method. Choose 'tfidf', 'cosine', or 'similarity_matrix'.")
 
-    def word_frequency_analysis(self, column, top_n=10, exclude_stopwords=True, language="english"):
-        """
-        Analyze word frequency in a text column.
-
-        Args:
-            column (str): The text column to analyze.
-            top_n (int): Number of most common words to return.
-            exclude_stopwords (bool): Whether to exclude stopwords.
-            language (str): Language for stopword filtering.
-
-        Returns:
-            dict: Word frequency count.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        text_data = self.data[column].dropna().astype(str)
-
-        # Tokenize words
-        words = text_data.str.split().explode()
-
-        # Remove stopwords if needed
-        if exclude_stopwords:
-            stop_words = set(stopwords.words(language))
-            words = words[~words.isin(stop_words)]
-
-        # Count word frequency
-        word_counts = Counter(words)
-
-        return word_counts.most_common(top_n)
-
     def named_entity_analysis(self, column, model='spacy', entity_types=None, return_frequency=False):
         """
         Perform Named Entity Recognition (NER) and optionally compute entity frequency.
@@ -3043,6 +2986,39 @@ class NLPAnalyzer:
 
         scores = self.data[column].apply(compute_metrics).dropna()
         return pd.DataFrame(scores.tolist(), index=self.data.index)
+
+    def analyze_text_keywords(self, column, method="rake", top_n=10, exclude_stopwords=True):
+        """
+        Extract keywords or analyze word frequency.
+
+        Args:
+            column (str): The text column to analyze.
+            method (str): Keyword extraction method ("rake" or "word_freq").
+            top_n (int): Number of top results to return.
+            exclude_stopwords (bool): Whether to exclude stopwords in word frequency analysis.
+
+        Returns:
+            dict: Extracted keywords or word frequency distribution.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        text_data = self.data[column].dropna().astype(str)
+
+        if method == "rake":
+            rake = Rake()
+            rake.extract_keywords_from_text(" ".join(text_data))
+            return {phrase: score for phrase, score in rake.get_word_degrees().items()[:top_n]}
+
+        if method == "word_freq":
+            words = text_data.str.split().explode()
+            if exclude_stopwords:
+                stop_words = set(stopwords.words("english"))
+                words = words[~words.isin(stop_words)]
+            return dict(Counter(words).most_common(top_n))
+
+        raise ValueError("Invalid method. Choose 'rake' or 'word_freq'.")
+
 
 
 
