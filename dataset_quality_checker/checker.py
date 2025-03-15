@@ -2472,31 +2472,6 @@ class NLPAnalyzer:
             topics.append(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
         return topics
 
-    def find_text_pairs(self, column, similarity_threshold=0.8):
-        """
-        Identify pairs of text entries in a column with high similarity.
-
-        Args:
-            column (str): Name of the column to check.
-            similarity_threshold (float): Threshold for similarity (0 to 1).
-
-        Returns:
-            list of tuples: Pairs of similar text entries.
-        """
-
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist in the dataset.")
-        text_data = self.data[column].dropna().astype(str).tolist()
-        similar_pairs = []
-
-        for i, text1 in enumerate(text_data):
-            for j, text2 in enumerate(text_data):
-                if i < j:  # Avoid duplicate comparisons
-                    similarity = SequenceMatcher(None, text1, text2).ratio()
-                    if similarity >= similarity_threshold:
-                        similar_pairs.append((text1, text2, similarity))
-        return similar_pairs
-
     def check_text_length(self, column, max_length=255):
         return self.data[self.data[column].str.len() > max_length]
 
@@ -2756,40 +2731,6 @@ class NLPAnalyzer:
 
         return {phrase: count for phrase, count in phrase_counts.items() if count >= n}
 
-    def text_vectorization_analysis(self, column, method="tfidf", max_features=100):
-        """
-        Perform text vectorization and similarity analysis.
-
-        Args:
-            column (str): The text column to analyze.
-            method (str): "tfidf" for TF-IDF vectors, "cosine" for cosine similarity, "similarity_matrix" for full similarity matrix.
-            max_features (int): Max number of features for vectorization.
-
-        Returns:
-            - If method="tfidf": Returns a TF-IDF DataFrame.
-            - If method="cosine": Returns cosine similarity scores.
-            - If method="similarity_matrix": Returns a similarity matrix DataFrame.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        text_data = self.data[column].dropna().astype(str)
-        vectorizer = TfidfVectorizer(max_features=max_features)
-        tfidf_matrix = vectorizer.fit_transform(text_data)
-
-        if method == "tfidf":
-            return pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out())
-
-        elif method == "cosine":
-            return cosine_similarity(tfidf_matrix)
-
-        elif method == "similarity_matrix":
-            similarity_matrix = cosine_similarity(tfidf_matrix)
-            return pd.DataFrame(similarity_matrix, index=text_data.index, columns=text_data.index)
-
-        else:
-            raise ValueError("Invalid method. Choose 'tfidf', 'cosine', or 'similarity_matrix'.")
-
     def named_entity_analysis(self, column, model='spacy', entity_types=None, return_frequency=False):
         """
         Perform Named Entity Recognition (NER) and optionally compute entity frequency.
@@ -2917,46 +2858,6 @@ class NLPAnalyzer:
 
         return sentiments
 
-    def compute_text_similarity(self, column, method="word2vec", word1=None, word2=None, threshold=0.2):
-        """
-        Compute text similarity using different methods.
-
-        Args:
-            column (str): The text column to analyze.
-            method (str): Similarity method ("word2vec", "tfidf", or "cosine").
-            word1 (str, optional): First word for Word2Vec similarity (required for "word2vec").
-            word2 (str, optional): Second word for Word2Vec similarity (required for "word2vec").
-            threshold (float, optional): Cosine similarity threshold for anomaly detection.
-
-        Returns:
-            Depending on method:
-            - "word2vec": Cosine similarity scores.
-            - "tfidf": Cosine similarity matrix.
-            - "cosine": Outliers detected based on similarity.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-        text_data = self.data[column].dropna().astype(str)
-
-        if method == "word2vec":
-            if not word1 or not word2:
-                raise ValueError("Both word1 and word2 must be specified for Word2Vec similarity.")
-            return self.data[column].apply(lambda x: self.model.similarity(word1, word2) if pd.notnull(x) else None)
-
-        vectorizer = TfidfVectorizer()
-        tfidf_matrix = vectorizer.fit_transform(text_data)
-
-        if method == "tfidf":
-            return pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out())
-
-        if method == "cosine":
-            similarity_matrix = cosine_similarity(tfidf_matrix)
-            avg_similarity = similarity_matrix.mean(axis=1)
-            anomalies = text_data[avg_similarity < threshold]
-            return anomalies.tolist()
-
-        raise ValueError("Invalid method. Choose 'word2vec', 'tfidf', or 'cosine'.")
-
     def analyze_text_complexity(self, column):
         """
         Analyze text complexity using readability scores, text length, and compression ratio.
@@ -3018,6 +2919,46 @@ class NLPAnalyzer:
             return dict(Counter(words).most_common(top_n))
 
         raise ValueError("Invalid method. Choose 'rake' or 'word_freq'.")
+
+    def analyze_text_similarity(self, column, similarity_method="word2vec", similarity_threshold=0.8, max_features=100):
+        """
+        Perform comprehensive text similarity analysis by combining:
+        - Word2Vec similarity (pairwise comparisons)
+        - High-similarity text pairs detection
+        - TF-IDF vectorization for structured text comparison
+
+        Args:
+            column (str): The text column to analyze.
+            similarity_method (str): Similarity method ("word2vec", "tfidf", or "cosine").
+            similarity_threshold (float): Threshold for similarity detection (only for text pairs).
+            max_features (int): Maximum features for TF-IDF vectorization.
+
+        Returns:
+            dict: Contains:
+                - 'similar_text_pairs': List of high-similarity text pairs.
+                - 'word2vec_similarity': Pairwise similarity scores (if applicable).
+                - 'tfidf_matrix': DataFrame of TF-IDF vector representations.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        results = {}
+
+        # Step 1: Find highly similar text pairs
+        results["similar_text_pairs"] = self.find_text_pairs(column, similarity_threshold)
+
+        # Step 2: Compute word2vec similarity (if selected)
+        if similarity_method == "word2vec":
+            results["word2vec_similarity"] = self.compute_text_similarity(column, method="word2vec")
+
+        # Step 3: Compute TF-IDF vectorization
+        results["tfidf_matrix"] = self.text_vectorization_analysis(column, method="tfidf", max_features=max_features)
+
+        return results
+
+
 
 
 
