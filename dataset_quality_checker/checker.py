@@ -2475,21 +2475,6 @@ class NLPAnalyzer:
     def check_text_length(self, column, max_length=255):
         return self.data[self.data[column].str.len() > max_length]
 
-    def detect_language(self, column):
-        """
-        Detect the language of text data.
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            pd.Series: Detected language codes.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        return self.data[column].dropna().apply(lambda x: detect(x))
-
     def count_stopwords(self, column, language="english"):
         stop_words = set(stopwords.words(language))
         return self.data[column].apply(lambda x: sum(1 for w in str(x).split() if w.lower() in stop_words))
@@ -2502,66 +2487,6 @@ class NLPAnalyzer:
             raise ValueError("One or both specified columns do not exist.")
         interaction_stats = self.data.groupby(categorical_column)[numeric_column].describe()
         return interaction_stats
-
-    def lexical_diversity(self, column, mode="row"):
-        """
-        Compute lexical diversity (ratio of unique words to total words).
-
-        Args:
-            column (str): The text column to analyze.
-            mode (str): "row" for row-wise diversity (default), "overall" for dataset-wide diversity.
-
-        Returns:
-            float or pd.Series:
-                - If mode="row": Returns a Pandas Series with lexical diversity scores for each row.
-                - If mode="overall": Returns a single float representing lexical diversity for the entire dataset.
-
-        Raises:
-            ValueError: If the column does not exist or mode is invalid.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        # Tokenize and flatten words for row-wise computation
-        if mode == "row":
-            return self.data[column].dropna().apply(
-                lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0
-            )
-
-        # Compute overall lexical diversity for the entire dataset
-        elif mode == "overall":
-            all_words = self.data[column].dropna().str.split().explode()
-            unique_words = set(all_words)
-            return len(unique_words) / len(all_words) if len(all_words) > 0 else 0
-
-        else:
-            raise ValueError(
-                "Invalid mode. Choose 'row' for per-row diversity or 'overall' for dataset-wide diversity.")
-
-    def named_entity_consistency(self, column, entity_type="ORG"):
-        """
-        Detect inconsistent usage of named entities.
-
-        Args:
-            column (str): The text column to analyze.
-            entity_type (str): Type of named entity (e.g., 'ORG', 'PERSON', 'GPE').
-
-        Returns:
-            dict: Entities with inconsistent casing or spelling variations.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        nlp = spacy.load("en_core_web_sm")
-        entity_dict = {}
-
-        for text in self.data[column].dropna():
-            doc = nlp(text)
-            for ent in doc.ents:
-                if ent.label_ == entity_type:
-                    entity_dict.setdefault(ent.text.lower(), set()).add(ent.text)
-
-        return {k: list(v) for k, v in entity_dict.items() if len(v) > 1}
 
     def subjectivity_analysis(self, column):
         """
@@ -2678,39 +2603,6 @@ class NLPAnalyzer:
         sorted_n_grams = dict(sorted(n_gram_counts.items(), key=lambda item: item[1], reverse=True)[:top_n])
 
         return sorted_n_grams
-
-    def pos_distribution(self, column):
-        """
-        Compute the distribution of parts of speech (POS) in text data.
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            dict: POS tag counts.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        # Load pre-trained spaCy NLP model
-        nlp = spacy.load("en_core_web_sm")
-        pos_counts = Counter()
-
-        # Process each text entry in the column
-        for text in self.data[column].dropna():
-            doc = nlp(text)
-            pos_counts.update([token.pos_ for token in doc])  # Count POS tags
-
-        # Plot POS distribution
-        plt.figure(figsize=(10, 5))
-        sns.barplot(x=list(pos_counts.keys()), y=list(pos_counts.values()))
-        plt.title("Part-of-Speech (POS) Distribution")
-        plt.xlabel("POS Tag")
-        plt.ylabel("Count")
-        plt.xticks(rotation=45)
-        plt.show()
-
-        return dict(pos_counts)
 
     def check_text_redundancy(self, column, n=3):
         """
@@ -2998,6 +2890,46 @@ class NLPAnalyzer:
 
         return results
 
+    def analyze_deep_linguistics(self, column, ner_model="spacy"):
+        """
+        Perform deep linguistic analysis on a text column, including:
+        - Named entity recognition (NER) with frequency counts.
+        - Part-of-speech (POS) distribution.
+        - Lexical diversity measurement (overall dataset-level).
+        - Language detection for multilingual data handling.
+
+        Args:
+            column (str): The text column to analyze.
+            ner_model (str): NLP model for NER ('spacy' or 'nltk').
+
+        Returns:
+            dict: Contains:
+                - 'named_entities': Named entity frequency counts.
+                - 'pos_distribution': Count of parts of speech.
+                - 'lexical_diversity': Overall lexical diversity score.
+                - 'detected_languages': Language distribution across text.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        results = {}
+
+        # Step 1: Named Entity Recognition (NER) - Counts entities
+        results["named_entities"] = self._named_entity_analysis(column, model=ner_model, return_frequency=True)
+
+        # Step 2: Part-of-Speech (POS) distribution
+        results["pos_distribution"] = self._pos_distribution(column)
+
+        # Step 3: Lexical diversity (ratio of unique words to total words in dataset)
+        results["lexical_diversity"] = self._lexical_diversity(column, mode="overall")
+
+        # Step 4: Language detection
+        results["detected_languages"] = self._detect_language(column).value_counts().to_dict()
+
+        return results
+
     def _find_text_pairs(self, column, similarity_threshold=0.8):
         """
         Identify pairs of text entries in a column with high similarity.
@@ -3096,6 +3028,115 @@ class NLPAnalyzer:
             return anomalies.tolist()
 
         raise ValueError("Invalid method. Choose 'word2vec', 'tfidf', or 'cosine'.")
+
+    def _named_entity_consistency(self, column, entity_type="ORG"):
+        """
+        Detect inconsistent usage of named entities.
+
+        Args:
+            column (str): The text column to analyze.
+            entity_type (str): Type of named entity (e.g., 'ORG', 'PERSON', 'GPE').
+
+        Returns:
+            dict: Entities with inconsistent casing or spelling variations.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        nlp = spacy.load("en_core_web_sm")
+        entity_dict = {}
+
+        for text in self.data[column].dropna():
+            doc = nlp(text)
+            for ent in doc.ents:
+                if ent.label_ == entity_type:
+                    entity_dict.setdefault(ent.text.lower(), set()).add(ent.text)
+
+        return {k: list(v) for k, v in entity_dict.items() if len(v) > 1}
+
+    def _pos_distribution(self, column):
+        """
+        Compute the distribution of parts of speech (POS) in text data.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            dict: POS tag counts.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        # Load pre-trained spaCy NLP model
+        nlp = spacy.load("en_core_web_sm")
+        pos_counts = Counter()
+
+        # Process each text entry in the column
+        for text in self.data[column].dropna():
+            doc = nlp(text)
+            pos_counts.update([token.pos_ for token in doc])  # Count POS tags
+
+        # Plot POS distribution
+        plt.figure(figsize=(10, 5))
+        sns.barplot(x=list(pos_counts.keys()), y=list(pos_counts.values()))
+        plt.title("Part-of-Speech (POS) Distribution")
+        plt.xlabel("POS Tag")
+        plt.ylabel("Count")
+        plt.xticks(rotation=45)
+        plt.show()
+
+        return dict(pos_counts)
+
+    def _lexical_diversity(self, column, mode="row"):
+        """
+        Compute lexical diversity (ratio of unique words to total words).
+
+        Args:
+            column (str): The text column to analyze.
+            mode (str): "row" for row-wise diversity (default), "overall" for dataset-wide diversity.
+
+        Returns:
+            float or pd.Series:
+                - If mode="row": Returns a Pandas Series with lexical diversity scores for each row.
+                - If mode="overall": Returns a single float representing lexical diversity for the entire dataset.
+
+        Raises:
+            ValueError: If the column does not exist or mode is invalid.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        # Tokenize and flatten words for row-wise computation
+        if mode == "row":
+            return self.data[column].dropna().apply(
+                lambda text: len(set(text.split())) / len(text.split()) if text.strip() else 0
+            )
+
+        # Compute overall lexical diversity for the entire dataset
+        elif mode == "overall":
+            all_words = self.data[column].dropna().str.split().explode()
+            unique_words = set(all_words)
+            return len(unique_words) / len(all_words) if len(all_words) > 0 else 0
+
+        else:
+            raise ValueError(
+                "Invalid mode. Choose 'row' for per-row diversity or 'overall' for dataset-wide diversity.")
+
+    def _detect_language(self, column):
+        """
+        Detect the language of text data.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Detected language codes.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        return self.data[column].dropna().apply(lambda x: detect(x))
+
 
 
 
