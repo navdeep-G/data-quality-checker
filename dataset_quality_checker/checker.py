@@ -2475,10 +2475,6 @@ class NLPAnalyzer:
     def check_text_length(self, column, max_length=255):
         return self.data[self.data[column].str.len() > max_length]
 
-    def count_stopwords(self, column, language="english"):
-        stop_words = set(stopwords.words(language))
-        return self.data[column].apply(lambda x: sum(1 for w in str(x).split() if w.lower() in stop_words))
-
     def category_feature_interaction(self, categorical_column, numeric_column):
         """
         Analyze interaction between categorical and numeric columns.
@@ -2487,21 +2483,6 @@ class NLPAnalyzer:
             raise ValueError("One or both specified columns do not exist.")
         interaction_stats = self.data.groupby(categorical_column)[numeric_column].describe()
         return interaction_stats
-
-    def subjectivity_analysis(self, column):
-        """
-        Compute subjectivity scores (0 = objective, 1 = highly subjective).
-
-        Args:
-            column (str): The text column to analyze.
-
-        Returns:
-            pd.Series: Subjectivity scores.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        return self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.subjectivity)
 
     def word_length_distribution(self, column):
         """
@@ -2727,29 +2708,6 @@ class NLPAnalyzer:
         else:
             raise ValueError("Invalid level. Choose 'word' or 'sentence'.")
 
-    def sentiment_analysis(self, column, return_distribution=False):
-        """
-        Perform sentiment analysis on a text column.
-
-        Args:
-            column (str): The text column to analyze.
-            return_distribution (bool): If True, return a distribution of sentiment scores.
-
-        Returns:
-            pd.Series or dict:
-                - If return_distribution=False: Returns a Series with sentiment polarity scores.
-                - If return_distribution=True: Returns a histogram of sentiment scores.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        sentiments = self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.polarity)
-
-        if return_distribution:
-            return dict(sentiments.value_counts().sort_index())
-
-        return sentiments
-
     def analyze_text_complexity(self, column):
         """
         Analyze text complexity using readability scores, text length, and compression ratio.
@@ -2930,6 +2888,47 @@ class NLPAnalyzer:
 
         return results
 
+    def detect_text_variability(self, column, entity_type="ORG", language="english"):
+        """
+        Evaluate variability of text data by combining:
+        - Named entity consistency (checks variations in entity usage).
+        - Stopword density measurement.
+        - Sentiment distribution analysis.
+        - Subjectivity scoring.
+
+        Args:
+            column (str): The text column to analyze.
+            entity_type (str): Named entity type to check consistency (e.g., 'ORG', 'PERSON', 'GPE').
+            language (str): Language for stopword detection.
+
+        Returns:
+            dict: Contains:
+                - 'entity_consistency': Entities with inconsistent spellings or casing.
+                - 'stopword_counts': Stopword frequency per row.
+                - 'sentiment_distribution': Distribution of sentiment scores.
+                - 'subjectivity_scores': Subjectivity levels across the dataset.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        results = {}
+
+        # Step 1: Named Entity Consistency - Detect inconsistencies in entity usage
+        results["entity_consistency"] = self._named_entity_consistency(column, entity_type=entity_type)
+
+        # Step 2: Stopword Count - Measures how much of the text is made up of stopwords
+        results["stopword_counts"] = self._count_stopwords(column, language=language).to_list()
+
+        # Step 3: Sentiment Analysis - Get sentiment distribution (negative, neutral, positive)
+        results["sentiment_distribution"] = self._sentiment_analysis(column, return_distribution=True)
+
+        # Step 4: Subjectivity Analysis - Determines how much of the text is opinion-based
+        results["subjectivity_scores"] = self._subjectivity_analysis(column).to_list()
+
+        return results
+
     def _find_text_pairs(self, column, similarity_threshold=0.8):
         """
         Identify pairs of text entries in a column with high similarity.
@@ -3029,31 +3028,6 @@ class NLPAnalyzer:
 
         raise ValueError("Invalid method. Choose 'word2vec', 'tfidf', or 'cosine'.")
 
-    def _named_entity_consistency(self, column, entity_type="ORG"):
-        """
-        Detect inconsistent usage of named entities.
-
-        Args:
-            column (str): The text column to analyze.
-            entity_type (str): Type of named entity (e.g., 'ORG', 'PERSON', 'GPE').
-
-        Returns:
-            dict: Entities with inconsistent casing or spelling variations.
-        """
-        if column not in self.data.columns:
-            raise ValueError(f"Column '{column}' does not exist.")
-
-        nlp = spacy.load("en_core_web_sm")
-        entity_dict = {}
-
-        for text in self.data[column].dropna():
-            doc = nlp(text)
-            for ent in doc.ents:
-                if ent.label_ == entity_type:
-                    entity_dict.setdefault(ent.text.lower(), set()).add(ent.text)
-
-        return {k: list(v) for k, v in entity_dict.items() if len(v) > 1}
-
     def _pos_distribution(self, column):
         """
         Compute the distribution of parts of speech (POS) in text data.
@@ -3136,6 +3110,73 @@ class NLPAnalyzer:
             raise ValueError(f"Column '{column}' does not exist.")
 
         return self.data[column].dropna().apply(lambda x: detect(x))
+
+    def _named_entity_consistency(self, column, entity_type="ORG"):
+        """
+        Detect inconsistent usage of named entities.
+
+        Args:
+            column (str): The text column to analyze.
+            entity_type (str): Type of named entity (e.g., 'ORG', 'PERSON', 'GPE').
+
+        Returns:
+            dict: Entities with inconsistent casing or spelling variations.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        nlp = spacy.load("en_core_web_sm")
+        entity_dict = {}
+
+        for text in self.data[column].dropna():
+            doc = nlp(text)
+            for ent in doc.ents:
+                if ent.label_ == entity_type:
+                    entity_dict.setdefault(ent.text.lower(), set()).add(ent.text)
+
+        return {k: list(v) for k, v in entity_dict.items() if len(v) > 1}
+
+    def _count_stopwords(self, column, language="english"):
+        stop_words = set(stopwords.words(language))
+        return self.data[column].apply(lambda x: sum(1 for w in str(x).split() if w.lower() in stop_words))
+
+    def _sentiment_analysis(self, column, return_distribution=False):
+        """
+        Perform sentiment analysis on a text column.
+
+        Args:
+            column (str): The text column to analyze.
+            return_distribution (bool): If True, return a distribution of sentiment scores.
+
+        Returns:
+            pd.Series or dict:
+                - If return_distribution=False: Returns a Series with sentiment polarity scores.
+                - If return_distribution=True: Returns a histogram of sentiment scores.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        sentiments = self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.polarity)
+
+        if return_distribution:
+            return dict(sentiments.value_counts().sort_index())
+
+        return sentiments
+
+    def _subjectivity_analysis(self, column):
+        """
+        Compute subjectivity scores (0 = objective, 1 = highly subjective).
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            pd.Series: Subjectivity scores.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+
+        return self.data[column].dropna().apply(lambda x: TextBlob(x).sentiment.subjectivity)
 
 
 
