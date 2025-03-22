@@ -2929,6 +2929,40 @@ class NLPAnalyzer:
 
         return results
 
+    def analyze_text_complexity_overview(self, column):
+        """
+        Perform a comprehensive readability and text complexity analysis, including:
+        - Readability scores and word-level statistics
+        - Word length distribution
+        - Sentence length distribution
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            dict: Contains:
+                - 'complexity_scores': DataFrame with readability metrics and text-level stats.
+                - 'word_length_distribution': Series with word length frequencies.
+                - 'sentence_length_distribution': Series with sentence length frequencies.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        results = {}
+
+        # Step 1: Readability scores, unique word ratios, and text length
+        results["complexity_scores"] = self.analyze_text_complexity(column)
+
+        # Step 2: Word length histogram and frequency
+        results["word_length_distribution"] = self.word_length_distribution(column)
+
+        # Step 3: Sentence length histogram and frequency
+        results["sentence_length_distribution"] = self.sentence_length_distribution(column)
+
+        return results
+
     def _find_text_pairs(self, column, similarity_threshold=0.8):
         """
         Identify pairs of text entries in a column with high similarity.
