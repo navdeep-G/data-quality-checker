@@ -2963,6 +2963,41 @@ class NLPAnalyzer:
 
         return results
 
+    def clean_and_standardize_text(self, column, max_length=255):
+        """
+        Perform automated text cleaning and standardization:
+        - Detect language of each entry.
+        - Identify rows exceeding a max character length.
+        - Apply spelling correction to text.
+
+        Args:
+            column (str): The text column to process.
+            max_length (int): Maximum allowed character length for text.
+
+        Returns:
+            dict: Contains:
+                - 'language_detection': Series of detected language codes.
+                - 'long_texts': DataFrame of rows with excessively long text.
+                - 'corrected_text': Series with spelling-corrected text.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        results = {}
+
+        # Step 1: Detect language
+        results["language_detection"] = self._detect_language(column)
+
+        # Step 2: Find long text entries
+        results["long_texts"] = self.check_text_length(column, max_length=max_length)
+
+        # Step 3: Correct spelling
+        results["corrected_text"] = self.correct_spelling(column)
+
+        return results
+
     def _find_text_pairs(self, column, similarity_threshold=0.8):
         """
         Identify pairs of text entries in a column with high similarity.
