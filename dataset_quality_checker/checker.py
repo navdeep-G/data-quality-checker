@@ -2998,6 +2998,44 @@ class NLPAnalyzer:
 
         return results
 
+    def semantic_search_analysis(self, column, similarity_threshold=0.8, max_features=100):
+        """
+        Perform advanced semantic search analysis:
+        - Vectorize text using TF-IDF.
+        - Compute cosine similarity matrix.
+        - Identify similar text pairs exceeding a similarity threshold.
+
+        Args:
+            column (str): The text column to analyze.
+            similarity_threshold (float): Minimum cosine similarity to consider two entries similar.
+            max_features (int): Maximum features for TF-IDF vectorization.
+
+        Returns:
+            dict: Contains:
+                - 'tfidf_vectors': TF-IDF feature matrix (DataFrame).
+                - 'similarity_matrix': Cosine similarity matrix (DataFrame).
+                - 'similar_text_pairs': List of (text1, text2, similarity_score).
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        results = {}
+
+        # Step 1: TF-IDF Vectorization
+        results["tfidf_vectors"] = self._text_vectorization_analysis(column, method="tfidf", max_features=max_features)
+
+        # Step 2: Cosine Similarity Matrix
+        similarity_matrix = self._text_vectorization_analysis(column, method="similarity_matrix",
+                                                             max_features=max_features)
+        results["similarity_matrix"] = similarity_matrix
+
+        # Step 3: Similar Text Pairs using thresholded cosine similarity
+        results["similar_text_pairs"] = self._find_text_pairs(column, similarity_threshold)
+
+        return results
+
     def _find_text_pairs(self, column, similarity_threshold=0.8):
         """
         Identify pairs of text entries in a column with high similarity.
