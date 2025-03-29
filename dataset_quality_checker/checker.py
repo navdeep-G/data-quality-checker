@@ -2998,6 +2998,43 @@ class NLPAnalyzer:
 
         return results
 
+    def analyze_text_redundancy_structure(self, column, redundancy_threshold=3, ngram_n=3, top_ngrams=20):
+        """
+        Analyze text for structural patterns and redundancies:
+        - Identify overused phrases or words.
+        - Tokenize text into sentences to observe structure and flow.
+        - Extract most common n-grams (e.g., trigrams) for repetitive pattern detection.
+
+        Args:
+            column (str): The text column to analyze.
+            redundancy_threshold (int): Minimum number of repetitions for a word/phrase to be flagged.
+            ngram_n (int): Size of the n-gram (e.g., 3 for trigrams).
+            top_ngrams (int): Number of top n-grams to return.
+
+        Returns:
+            dict: Contains:
+                - 'redundant_phrases': Repeated phrases with their counts.
+                - 'sentence_tokens': Tokenized text as lists of sentences.
+                - 'common_ngrams': Most frequent n-grams in the dataset.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        results = {}
+
+        # Step 1: Detect repeated words/phrases
+        results["redundant_phrases"] = self.check_text_redundancy(column, n=redundancy_threshold)
+
+        # Step 2: Sentence tokenization
+        results["sentence_tokens"] = self.text_tokenization_analysis(column, level="sentence")
+
+        # Step 3: Top n-grams (e.g., trigrams)
+        results["common_ngrams"] = self.n_gram_distribution(column, n=ngram_n, top_n=top_ngrams)
+
+        return results
+
     def semantic_search_analysis(self, column, similarity_threshold=0.8, max_features=100):
         """
         Perform advanced semantic search analysis:
