@@ -3073,6 +3073,40 @@ class NLPAnalyzer:
 
         return results
 
+    def analyze_emotional_tone(self, column):
+        """
+        Analyze sentiment and emotional tone of text by combining:
+        - Sentiment polarity distribution.
+        - Subjectivity scoring (opinion vs. fact).
+        - Lexical diversity per row.
+
+        Args:
+            column (str): The text column to analyze.
+
+        Returns:
+            dict: Contains:
+                - 'sentiment_distribution': Histogram of sentiment polarity values.
+                - 'subjectivity_scores': List of subjectivity scores per row.
+                - 'lexical_diversity_scores': List of lexical diversity ratios per row.
+        """
+        if column not in self.data.columns:
+            raise ValueError(f"Column '{column}' does not exist.")
+        if not pd.api.types.is_string_dtype(self.data[column]):
+            raise ValueError(f"Column '{column}' must be of string type.")
+
+        results = {}
+
+        # Step 1: Sentiment polarity histogram
+        results["sentiment_distribution"] = self.sentiment_analysis(column, return_distribution=True)
+
+        # Step 2: Subjectivity scores (0 = objective, 1 = subjective)
+        results["subjectivity_scores"] = self.subjectivity_analysis(column).tolist()
+
+        # Step 3: Lexical diversity (unique words / total words per row)
+        results["lexical_diversity_scores"] = self.lexical_diversity(column, mode="row").tolist()
+
+        return results
+
     def _find_text_pairs(self, column, similarity_threshold=0.8):
         """
         Identify pairs of text entries in a column with high similarity.
