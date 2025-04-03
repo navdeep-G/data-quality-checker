@@ -2564,8 +2564,6 @@ class NLPAnalyzer:
 
         return char_counts.value_counts().sort_index()
 
-    from sklearn.feature_extraction.text import CountVectorizer
-
     def n_gram_distribution(self, column, n=2, top_n=20):
         """
         Identify most common n-grams in text data.
