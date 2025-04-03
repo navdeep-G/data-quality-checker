@@ -1227,6 +1227,10 @@ class StatisticalAnalyzer:
         Raises:
             ValueError: If the input parameters or column data types are invalid.
         """
+
+        test_statistic = None
+        p_value = None
+
         # Validate test_type
         valid_tests = ['t-test', 'chi-squared', 'anova']
         if test_type not in valid_tests:
@@ -2875,7 +2879,7 @@ class NLPAnalyzer:
         results = {}
 
         # Step 1: Named Entity Recognition (NER) - Counts entities
-        results["named_entities"] = self._named_entity_analysis(column, model=ner_model, return_frequency=True)
+        results["named_entities"] = self.named_entity_analysis(column, model=ner_model, return_frequency=True)
 
         # Step 2: Part-of-Speech (POS) distribution
         results["pos_distribution"] = self._pos_distribution(column)
@@ -3097,13 +3101,13 @@ class NLPAnalyzer:
         results = {}
 
         # Step 1: Sentiment polarity histogram
-        results["sentiment_distribution"] = self.sentiment_analysis(column, return_distribution=True)
+        results["sentiment_distribution"] = self._sentiment_analysis(column, return_distribution=True)
 
         # Step 2: Subjectivity scores (0 = objective, 1 = subjective)
-        results["subjectivity_scores"] = self.subjectivity_analysis(column).tolist()
+        results["subjectivity_scores"] = self._subjectivity_analysis(column).tolist()
 
         # Step 3: Lexical diversity (unique words / total words per row)
-        results["lexical_diversity_scores"] = self.lexical_diversity(column, mode="row").tolist()
+        results["lexical_diversity_scores"] = self._lexical_diversity(column, mode="row").tolist()
 
         return results
 
