@@ -1,67 +1,67 @@
 # Dataset Quality Checker
 
-A Python package designed to evaluate and maintain data quality by identifying common data issues like missing values, duplicates, outliers, and class imbalances. It also includes advanced assessments such as schema validation, semantic consistency checks, hypothesis testing, time-series analysis, and data drift detection, making it a versatile tool for ensuring the reliability of your datasets.
+A Python package for evaluating and maintaining dataset quality by identifying common data issues such as missing values, duplicates, outliers, and class imbalances. It also supports advanced assessments like schema validation, semantic consistency checks, hypothesis testing, time-series analysis, and data drift detection—making it a comprehensive tool for ensuring data reliability.
 
 ---
 
-## Features
+## 🔧 Features
 
-### 🔍 **Basic Checks**
-- **Missing Values**: Identify columns with missing data and calculate the percentage of missing values.
-- **Duplicate Rows**: Detect and return duplicate rows in the dataset.
-- **Outliers**: Detect numeric outliers using Z-scores, IQR, or Isolation Forest.
-- **Class Imbalance**: Analyze class distribution for categorical columns.
+### 🔍 Basic Checks
+- **Missing Values**: Detect columns with missing data and calculate missing percentages.
+- **Duplicate Rows**: Identify and return duplicate rows.
+- **Outliers**: Detect numeric outliers using Z-score, IQR, or Isolation Forest.
+- **Class Imbalance**: Analyze class distribution in categorical columns.
 - **Empty Columns**: Identify columns with no non-null values.
 
-### 🚀 **Advanced Checks**
-- **Schema Validation**: Ensure the dataset conforms to a predefined schema with type, format, and range constraints.
-- **Data Type Consistency**: Identify columns with mixed or inconsistent data types.
-- **Correlation Analysis**: Flag highly correlated numeric features to reduce redundancy.
+### 🚀 Advanced Checks
+- **Schema Validation**: Validate against a predefined schema with type, format, and range constraints.
+- **Data Type Consistency**: Identify columns with inconsistent or mixed data types.
+- **Correlation Analysis**: Flag highly correlated numeric features.
 - **Unique Values**: Detect columns with only a single unique value.
-- **Rare Categories**: Identify rare categories in categorical columns using a frequency threshold.
-- **Multicollinearity**: Detect multicollinearity using the Variance Inflation Factor (VIF).
-- **Unexpected Values**: Flag invalid or unexpected values in categorical columns.
-- **Column Naming Convention**: Verify column names adhere to a specified naming pattern.
-- **Cross-Column Dependency**: Ensure that cross-column rules and dependencies are satisfied.
-- **Conditional Probabilities**: Detect deviations in expected conditional probabilities.
-- **Bootstrap Sampling Analysis**: Use bootstrapping to estimate confidence intervals for numeric columns.
+- **Rare Categories**: Identify infrequent categories based on a frequency threshold.
+- **Multicollinearity**: Detect using Variance Inflation Factor (VIF).
+- **Unexpected Values**: Flag invalid entries in categorical columns.
+- **Naming Convention Check**: Verify adherence to column naming patterns.
+- **Cross-Column Rules**: Validate inter-column dependencies and logical rules.
+- **Conditional Probability Deviations**: Identify deviations in expected conditional distributions.
+- **Bootstrap Sampling**: Estimate confidence intervals for numeric columns using bootstrapping.
 
-### 📊 **Statistical Testing**
-- **Hypothesis Testing**: Perform t-tests, chi-squared tests, or ANOVA to compare distributions or groups.
-- **Uniform Distribution Test**: Verify if numeric or categorical data follows a uniform distribution.
-- **Confidence Intervals**: Calculate confidence intervals for numeric columns.
-- **Outlier Impact**: Assess the impact of outliers on statistical metrics.
+### 📊 Statistical Testing
+- **Hypothesis Testing**: Perform t-tests, chi-squared tests, or ANOVA.
+- **Uniformity Test**: Check if data follows a uniform distribution.
+- **Confidence Intervals**: Compute for numeric columns.
+- **Outlier Impact**: Assess how outliers affect key statistics.
 
-### 📈 **Time-Series Analysis**
-- **Time-Series Gaps**: Identify missing or unordered timestamps in time-series data.
-- **Temporal Trends**: Detect anomalies or deviations in numeric data over time.
-- **Seasonality Detection**: Identify seasonal patterns in time-series data.
-- **Change Point Detection**: Identify structural breaks or shifts in time-series data.
-- **Non-Stationarity Detection**: Apply ADF tests to check time-series stationarity.
-- **Forecast Accuracy Metrics**: Evaluate predictive model accuracy on time-series data.
+### 📈 Time-Series Analysis
+- **Time Gaps**: Identify missing or unordered timestamps.
+- **Trend Detection**: Spot anomalies or trends in numeric time-series data.
+- **Seasonality**: Detect recurring seasonal patterns.
+- **Change Point Detection**: Identify structural breaks or shifts.
+- **Stationarity Test**: Use ADF test to check for stationarity.
+- **Forecast Metrics**: Evaluate time-series model accuracy.
 
-### 📝 **Text and NLP Analysis**
-- **Text Length**: Flag excessively long text entries in a column.
-- **Text Similarity**: Identify pairs of highly similar text entries.
-- **Sentiment Analysis**: Analyze sentiment scores of text data.
-- **Named Entity Recognition (NER)**: Extract named entities such as names, organizations, or dates.
-- **Keyword Extraction**: Identify top keywords from text using RAKE.
-- **Spelling Correction**: Correct spelling mistakes in text columns.
-- **Topic Modeling**: Extract dominant topics using LDA.
-- **Text Tokenization**: Tokenize text into words or sentences.
-- **Language Detection**: Detect the language of text entries.
-- **Stopword Analysis**: Count stopwords in text columns.
-- **N-gram Analysis**: Analyze text patterns using n-grams.
+### 📝 Text and NLP Analysis
+- **Text Length Check**: Detect excessively long text entries.
+- **Text Similarity**: Find highly similar text pairs.
+- **Sentiment Analysis**: Assign sentiment scores.
+- **NER**: Extract entities like names, dates, organizations.
+- **Keyword Extraction**: Use RAKE for identifying key terms.
+- **Spelling Correction**: Auto-correct spelling in text columns.
+- **Topic Modeling**: Extract dominant topics via LDA.
+- **Tokenization**: Break text into words or sentences.
+- **Language Detection**: Detect text language.
+- **Stopword Analysis**: Count common stopwords.
+- **N-gram Analysis**: Identify frequent n-gram patterns.
 
-### 📊 **Data Drift and Anomaly Detection**
-- **Data Drift**: Compare column distributions to a baseline dataset for drift detection.
-- **Anomalies**: Use Isolation Forest to identify anomalies in numeric data.
-- **Rare Events**: Detect rare numeric events using statistical thresholds.
+### 📊 Data Drift and Anomaly Detection
+- **Data Drift**: Compare distributions to a baseline dataset.
+- **Anomalies**: Use Isolation Forest to identify numeric anomalies.
+- **Rare Events**: Detect unusual numeric events using statistical thresholds.
 
-### 🌐 **Semantic and Cross-Column Validation**
-- **Semantic Consistency**: Validate column values against a predefined semantic mapping.
-- **Cross-Column Dependency**: Ensure that cross-column rules and dependencies are satisfied.
-- **Conditional Probabilities**: Detect deviations in expected conditional probabilities.
+### 🌐 Semantic & Cross-Column Validation
+- **Semantic Checks**: Validate data against expected semantic mappings.
+- **Dependency Validation**: Enforce and validate inter-column logic.
+- **Conditional Probabilities**: Detect inconsistencies in dependent probabilities.
 
 ---
 
