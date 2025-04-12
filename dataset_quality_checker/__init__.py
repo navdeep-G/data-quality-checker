@@ -1,1 +1,4 @@
-from dataset_quality_checker.checker import DataQualityChecker
+from dataset_quality_checker.dq_checker import DataQualityChecker
+from dataset_quality_checker.stat_analyzer import StatisticalAnalyzer
+from dataset_quality_checker.ts_analyzer import TimeSeriesAnalyzer
+from dataset_quality_checker.nlp_analyzer import NLPAnalyzer
