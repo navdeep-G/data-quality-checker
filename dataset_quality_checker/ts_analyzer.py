@@ -1,48 +1,16 @@
 import holidays
 import numpy as np
-from scipy.stats import ks_2samp
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-from sklearn.feature_extraction.text import TfidfVectorizer
-from nltk.corpus import stopwords
-from collections import Counter
-from langdetect import detect
-from sklearn.metrics.pairwise import cosine_similarity
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
-import json
-import phonenumbers
-import gensim.downloader as api
 import pandas as pd
-from sklearn.ensemble import IsolationForest
-from scipy.stats import ttest_ind, chi2_contingency, f_oneway, chisquare
-from itertools import combinations
-from scipy.stats import skew, kurtosis, kstest
-from scipy.signal import find_peaks
-import scipy.stats as stats
 from sklearn.metrics import mean_squared_error, mean_absolute_error, median_absolute_error, r2_score
 from statsmodels.tsa.stattools import adfuller
-from textblob import TextBlob
-from rake_nltk import Rake
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.decomposition import LatentDirichletAllocation
-import re
-import nltk
-import spacy
-from nltk.tokenize import sent_tokenize
-from nltk import word_tokenize, pos_tag, ne_chunk
-from nltk.tree import Tree
-from difflib import SequenceMatcher
-from scipy.stats import levene, bartlett
-from scipy.stats import shapiro
-from sklearn.feature_selection import mutual_info_classif
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import ruptures as rpt
 from scipy.fftpack import fft
-import textstat
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 class TimeSeriesAnalyzer:
