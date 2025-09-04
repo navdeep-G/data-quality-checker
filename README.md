@@ -4,7 +4,7 @@ A Python package for evaluating and maintaining dataset quality by identifying c
 
 ---
 
-## 🔧 Features
+## Features
 ### 🔍 Basic Checks
 - **Missing Values**: Detect columns with missing data and calculate missing percentages.
 - **Duplicate Rows**: Identify and return duplicate rows.
